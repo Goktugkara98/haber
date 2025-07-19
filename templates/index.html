@@ -46,13 +46,23 @@
             <div class="settings-section">
                 <h6 class="settings-section-title" data-tooltip="gorev_tanimi">Genel Ayarlar</h6>
                 
-                <div class="setting-item">
-                    <label class="setting-label" for="targetCategory" data-tooltip="muhtemel_kategori">Hedef Kategori</label>
-                    <select id="targetCategory" class="setting-select">
-                        <option value="auto">Otomatik Belirleme</option>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label for="targetCategory" class="form-label mb-0">Hedef Kategori</label>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="TooltipComponent.showSettingEditModal('target_category', 'Hedef Kategori')">
+                            <i class="fas fa-edit"></i> Düzenle
+                        </button>
+                    </div>
+                    <select class="form-select" id="targetCategory" data-setting="target_category">
+                        <option value="auto" selected>Otomatik belirle</option>
+                        <option value="politics">Siyaset</option>
+                        <option value="economy">Ekonomi</option>
+                        <option value="sports">Spor</option>
+                        <option value="technology">Teknoloji</option>
+                        <option value="health">Sağlık</option>
+                        <option value="culture">Kültür</option>
                         <option value="Asayiş">Asayiş</option>
                         <option value="Gündem">Gündem</option>
-                        <option value="Ekonomi">Ekonomi</option>
                         <option value="Siyaset">Siyaset</option>
                         <option value="Spor">Spor</option>
                         <option value="Teknoloji">Teknoloji</option>
@@ -64,17 +74,20 @@
                         <option value="Magazin">Magazin</option>
                         <option value="Genel">Genel</option>
                     </select>
-                    <div class="setting-description">Haberin hangi kategoriye ait olacağını belirler</div>
                 </div>
                 
-                <div class="setting-item">
-                    <label class="setting-label" for="writingStyle" data-tooltip="kurumsal_dil">Yazım Stili</label>
-                    <select id="writingStyle" class="setting-select">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label for="writingStyle" class="form-label mb-0">Yazım Stili</label>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="TooltipComponent.showSettingEditModal('writing_style', 'Yazım Stili')">
+                            <i class="fas fa-edit"></i> Düzenle
+                        </button>
+                    </div>
+                    <select class="form-select" id="writingStyle" data-setting="writing_style">
                         <option value="formal">Resmi</option>
                         <option value="semiformal">Yarı Resmi</option>
                         <option value="neutral">Nötr</option>
                     </select>
-                    <div class="setting-description">Haberin yazım tarzını belirler</div>
                 </div>
             </div>
             
@@ -83,48 +96,64 @@
                 <h6 class="settings-section-title" data-tooltip="ozgunluk">İçerik Ayarları</h6>
                 
                 <!-- Başlık Ayarları -->
-                <div class="setting-item">
-                    <label class="setting-label" for="titleCityInfo" data-tooltip="etkili_baslik">Başlıkta Şehir Bilgisi</label>
-                    <select id="titleCityInfo" class="setting-select">
-                        <option value="exclude">İçermesin</option>
-                        <option value="include">İçersin</option>
-                    </select>
-                    <div class="setting-description">Başlıkta şehir bilgisinin yer alıp almayacağını belirler</div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label for="titleCityInfo" class="form-label mb-0">Başlıkta Şehir Bilgisi</label>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="TooltipComponent.showSettingEditModal('title_include_city', 'Başlık Şehir Bilgisi')">
+                            <i class="fas fa-edit"></i> Düzenle
+                        </button>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="titleCityInfo" data-setting="title_include_city" checked>
+                        <label class="form-check-label" for="titleCityInfo">
+                            Başlıkta şehir bilgisi dahil edilsin
+                        </label>
+                    </div>
                 </div>
                 
                 <!-- İsim Sansürleme -->
-                <div class="setting-item">
-                    <label class="setting-label" for="nameCensorship" data-tooltip="ozgun_haber_metni">İsim Sansürleme</label>
-                    <select id="nameCensorship" class="setting-select">
-                        <option value="initials">G.K. (İlk harfler)</option>
-                        <option value="partial">Göktuğ K. (İsim + Soyisim baş harfi)</option>
-                        <option value="none">Sansürleme</option>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label for="nameCensorship" class="form-label mb-0">İsim Sansürü</label>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="TooltipComponent.showSettingEditModal('name_censorship', 'İsim Sansürü')">
+                            <i class="fas fa-edit"></i> Düzenle
+                        </button>
+                    </div>
+                    <select class="form-select" id="nameCensorship" data-setting="name_censorship">
+                        <option value="none">Sansür yok</option>
+                        <option value="initials">G.K. formatında</option>
+                        <option value="partial">Göktuğ K. formatında</option>
                     </select>
-                    <div class="setting-description">Kişi isimlerinin nasıl gösterileceğini belirler</div>
                 </div>
                 
                 <!-- Şirket Bilgileri -->
-                <div class="setting-item">
-                    <div class="setting-toggle">
-                        <input type="checkbox" id="removeCompanyInfo" class="setting-checkbox">
-                        <label for="removeCompanyInfo" class="setting-toggle-label">
-                            <span class="setting-toggle-slider"></span>
-                            Şirket Bilgilerini Kaldır
-                        </label>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="companyInfo" data-setting="company_info_toggle" checked>
+                            <label class="form-check-label" for="companyInfo">
+                                Şirket/plaka bilgileri dahil edilsin
+                            </label>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="TooltipComponent.showSettingEditModal('company_info_toggle', 'Şirket Bilgileri')">
+                            <i class="fas fa-edit"></i> Düzenle
+                        </button>
                     </div>
-                    <div class="setting-description">Özel şirket bilgilerini haberde göstermez</div>
                 </div>
                 
                 <!-- Plaka Bilgileri -->
-                <div class="setting-item">
-                    <div class="setting-toggle">
-                        <input type="checkbox" id="removePlateInfo" class="setting-checkbox">
-                        <label for="removePlateInfo" class="setting-toggle-label">
-                            <span class="setting-toggle-slider"></span>
-                            Plaka Bilgilerini Kaldır
-                        </label>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="removePlateInfo" data-setting="remove_plate_info" checked>
+                            <label class="form-check-label" for="removePlateInfo">
+                                Plaka bilgileri hariç tutulsun
+                            </label>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="TooltipComponent.showSettingEditModal('remove_plate_info', 'Plaka Bilgileri')">
+                            <i class="fas fa-edit"></i> Düzenle
+                        </button>
                     </div>
-                    <div class="setting-description">Araç plaka bilgilerini haberde göstermez</div>
                 </div>
             </div>
             
@@ -132,25 +161,28 @@
             <div class="settings-section">
                 <h6 class="settings-section-title" data-tooltip="ciktinin_formati">Çıktı Ayarları</h6>
                 
-                <div class="setting-item">
-                    <label class="setting-label" for="outputFormat">Çıktı Formatı</label>
-                    <select id="outputFormat" class="setting-select">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label for="outputFormat" class="form-label mb-0">Çıktı Formatı</label>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="TooltipComponent.showSettingEditModal('output_format', 'Çıktı Formatı')">
+                            <i class="fas fa-edit"></i> Düzenle
+                        </button>
+                    </div>
+                    <select class="form-select" id="outputFormat" data-setting="output_format">
                         <option value="json">JSON</option>
                         <option value="text">Metin</option>
                         <option value="html">HTML</option>
                     </select>
-                    <div class="setting-description">İşlenmiş haberin hangi formatta döneceğini belirler</div>
                 </div>
                 
-                <div class="setting-item">
-                    <label class="setting-label" for="tagCount" data-tooltip="etiketler">Etiket Sayısı</label>
-                    <select id="tagCount" class="setting-select">
-                        <option value="3">3 Etiket</option>
-                        <option value="5" selected>5 Etiket</option>
-                        <option value="7">7 Etiket</option>
-                        <option value="10">10 Etiket</option>
-                    </select>
-                    <div class="setting-description">Haber için oluşturulacak etiket sayısını belirler</div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label for="tagCount" class="form-label mb-0">Etiket Sayısı</label>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="TooltipComponent.showSettingEditModal('tag_count', 'Etiket Sayısı')">
+                            <i class="fas fa-edit"></i> Düzenle
+                        </button>
+                    </div>
+                    <input type="number" class="form-control" id="tagCount" data-setting="tag_count" value="5" min="1" max="10">
                 </div>
                 
                 <div class="setting-item">

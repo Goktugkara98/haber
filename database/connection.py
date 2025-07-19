@@ -6,19 +6,22 @@ class DatabaseConnection:
     def __init__(self):
         self.connection = None
         self.cursor = None
+        self.connect()  # Auto-connect on initialization
     
     def connect(self):
         """Veritabanı bağlantısını kurar"""
         try:
             self.connection = mysql.connector.connect(
-                host=os.getenv('DB_HOST', 'localhost'),
-                database=os.getenv('DB_NAME', 'news_app'),
-                user=os.getenv('DB_USER', 'root'),
-                password=os.getenv('DB_PASSWORD', '')
+                host='localhost',
+                database='haber_editor',
+                user='root',
+                password='',
+                charset='utf8mb4',
+                collation='utf8mb4_unicode_ci'
             )
             if self.connection.is_connected():
-                self.cursor = self.connection.cursor()
-                print("MySQL veritabanına başarıyla bağlandı")
+                self.cursor = self.connection.cursor(dictionary=True)
+                print("MySQL veritabanına bağlanıldı")
                 return True
         except Error as e:
             print(f"Veritabanı bağlantı hatası: {e}")
@@ -31,15 +34,27 @@ class DatabaseConnection:
             self.connection.close()
             print("MySQL bağlantısı kapatıldı")
     
-    def execute_query(self, query, params=None):
+    def execute_query(self, query, params=None, fetch_one=False, fetch_all=False):
         """SQL sorgusu çalıştırır"""
         try:
             if params:
                 self.cursor.execute(query, params)
             else:
                 self.cursor.execute(query)
-            self.connection.commit()
-            return self.cursor.fetchall()
+            
+            # For SELECT queries, fetch results
+            if query.strip().upper().startswith('SELECT'):
+                if fetch_one:
+                    return self.cursor.fetchone()
+                elif fetch_all:
+                    return self.cursor.fetchall()
+                else:
+                    return self.cursor.fetchall()  # Default behavior
+            else:
+                # For INSERT, UPDATE, DELETE queries
+                self.connection.commit()
+                return self.cursor.rowcount  # Return affected rows
+                
         except Error as e:
             print(f"Sorgu çalıştırma hatası: {e}")
             return None

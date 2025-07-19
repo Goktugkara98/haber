@@ -1,278 +1,217 @@
-// Settings Component JavaScript
+/**
+ * Settings Component
+ * Handles prompt settings and user preferences with database integration
+ */
 
 const SettingsComponent = {
-    elements: {},
+    // Default settings
     defaultSettings: {
-        aiModel: 'default',
-        creativity: 50,
-        preserveStyle: true,
-        autoSave: true,
-        language: 'tr',
-        outputFormat: 'paragraph'
+        title_include_city: true,
+        name_censorship: 'G.K.',
+        company_info_toggle: true,
+        target_category: 'auto',
+        tag_count: 5,
+        output_format: 'professional'
     },
     
-    // Initialize the component
+    // Auto-save timeout
+    autoSaveTimeout: null,
+    
+    // Initialize component
     init: function() {
-        this.cacheElements();
+        console.log('Settings Component initialized');
         this.bindEvents();
         this.loadSettings();
-        console.log('Settings Component initialized');
-    },
-
-    // Cache DOM elements
-    cacheElements: function() {
-        this.elements = {
-            aiModel: document.getElementById('aiModel'),
-            creativity: document.getElementById('creativity'),
-            creativityValue: document.getElementById('creativityValue'),
-            preserveStyle: document.getElementById('preserveStyle'),
-            autoSave: document.getElementById('autoSave'),
-            language: document.getElementById('language'),
-            outputFormat: document.getElementById('outputFormat'),
-            resetBtn: document.getElementById('resetSettings'),
-            saveBtn: document.getElementById('saveSettings')
-        };
+        this.setupAutoSave();
     },
 
     // Bind events
     bindEvents: function() {
-        // Creativity slider
-        if (this.elements.creativity) {
-            this.elements.creativity.addEventListener('input', this.handleCreativityChange.bind(this));
-        }
-
-        // All form controls
-        Object.keys(this.elements).forEach(key => {
-            const element = this.elements[key];
-            if (element && element.tagName !== 'BUTTON' && element.tagName !== 'SPAN') {
-                element.addEventListener('change', this.handleSettingChange.bind(this));
-            }
-        });
-
-        // Reset button
-        if (this.elements.resetBtn) {
-            this.elements.resetBtn.addEventListener('click', this.resetSettings.bind(this));
-        }
-
-        // Save button
-        if (this.elements.saveBtn) {
-            this.elements.saveBtn.addEventListener('click', this.saveSettings.bind(this));
-        }
+        // Event bindings will be handled by setupAutoSave
     },
 
-    // Handle creativity slider change
-    handleCreativityChange: function(e) {
-        const value = e.target.value;
-        if (this.elements.creativityValue) {
-            this.elements.creativityValue.textContent = value + '%';
-        }
-        
-        // Update slider color based on value
-        const percentage = (value - e.target.min) / (e.target.max - e.target.min) * 100;
-        e.target.style.background = `linear-gradient(to right, var(--primary-color) 0%, var(--primary-color) ${percentage}%, #ddd ${percentage}%, #ddd 100%)`;
-        
-        this.handleSettingChange(e);
-    },
-
-    // Handle any setting change
-    handleSettingChange: function(e) {
-        // Auto-save if enabled
-        const autoSaveEnabled = this.elements.autoSave ? this.elements.autoSave.checked : true;
-        if (autoSaveEnabled) {
-            this.debouncedSave = this.debouncedSave || Utils.debounce(() => {
-                this.saveSettings();
-            }, 1000);
-            this.debouncedSave();
-        }
-
-        // Visual feedback
-        this.showSettingChanged(e.target);
-    },
-
-    // Show visual feedback for changed setting
-    showSettingChanged: function(element) {
-        element.classList.add('setting-changed');
-        
-        // Animate with GSAP if available
-        if (typeof gsap !== 'undefined') {
-            gsap.fromTo(element, 
-                { scale: 1 },
-                { 
-                    scale: 1.05, 
-                    duration: 0.1, 
-                    yoyo: true, 
-                    repeat: 1,
-                    ease: 'power2.inOut',
-                    onComplete: () => {
-                        setTimeout(() => {
-                            element.classList.remove('setting-changed');
-                        }, 2000);
-                    }
+    // Setup auto-save functionality
+    setupAutoSave: function() {
+        // Auto-save on any form change
+        const settingsContainer = document.querySelector('.settings-panel');
+        if (settingsContainer) {
+            settingsContainer.addEventListener('change', (e) => {
+                if (e.target.hasAttribute('data-setting')) {
+                    console.log('Ayar değişti:', e.target.getAttribute('data-setting'), '→', this.getElementValue(e.target));
+                    this.saveSettings();
                 }
-            );
-        } else {
-            setTimeout(() => {
-                element.classList.remove('setting-changed');
-            }, 2000);
+            });
+            
+            // Also listen for input events for text/number inputs
+            settingsContainer.addEventListener('input', (e) => {
+                if (e.target.hasAttribute('data-setting') && (e.target.type === 'text' || e.target.type === 'number')) {
+                    // Debounce to avoid too many saves
+                    clearTimeout(this.autoSaveTimeout);
+                    this.autoSaveTimeout = setTimeout(() => {
+                        console.log('Ayar değişti (input):', e.target.getAttribute('data-setting'), '→', this.getElementValue(e.target));
+                        this.saveSettings();
+                    }, 500);
+                }
+            });
         }
     },
 
-    // Get current settings
+    // Get value from form element
+    getElementValue: function(element) {
+        if (element.type === 'checkbox') {
+            return element.checked;
+        } else if (element.tagName === 'SELECT') {
+            return element.value;
+        } else if (element.type === 'number') {
+            return parseInt(element.value) || 0;
+        } else {
+            return element.value;
+        }
+    },
+
+    // Get all current settings from form
     getSettings: function() {
         const settings = {};
+        const settingElements = document.querySelectorAll('[data-setting]');
         
-        if (this.elements.aiModel) {
-            settings.aiModel = this.elements.aiModel.value;
-        }
+        settingElements.forEach(element => {
+            const settingKey = element.getAttribute('data-setting');
+            settings[settingKey] = this.getElementValue(element);
+        });
         
-        if (this.elements.creativity) {
-            settings.creativity = parseInt(this.elements.creativity.value);
-        }
-        
-        if (this.elements.preserveStyle) {
-            settings.preserveStyle = this.elements.preserveStyle.checked;
-        }
-        
-        if (this.elements.autoSave) {
-            settings.autoSave = this.elements.autoSave.checked;
-        }
-        
-        if (this.elements.language) {
-            settings.language = this.elements.language.value;
-        }
-        
-        if (this.elements.outputFormat) {
-            settings.outputFormat = this.elements.outputFormat.value;
-        }
-
         return settings;
     },
 
-    // Set settings
-    setSettings: function(settings) {
-        if (!settings) return;
-
-        Object.keys(settings).forEach(key => {
-            const element = this.elements[key];
-            if (!element) return;
-
-            if (element.type === 'checkbox') {
-                element.checked = settings[key];
-            } else if (element.type === 'range') {
-                element.value = settings[key];
-                if (key === 'creativity') {
-                    this.handleCreativityChange({ target: element });
+    // Load settings from database
+    loadSettings: async function() {
+        try {
+            // Load user settings from API for Göktuğ user
+            const response = await fetch('/api/prompt/user-settings');
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success && result.data) {
+                    this.applySettings(result.data);
+                    console.log('Göktuğ kullanıcısının ayarları yüklendi:', result.data);
+                    console.log('Aktif kullanıcı: Göktuğ (goktug_user_2025)');
+                } else {
+                    console.warn('Kullanıcı ayarları yüklenemedi, varsayılan ayarlar kullanılıyor');
                 }
             } else {
-                element.value = settings[key];
+                console.warn('Kullanıcı ayarları yüklenemedi, varsayılan ayarlar kullanılıyor');
+            }
+        } catch (error) {
+            console.error('Kullanıcı ayarları yükleme hatası:', error);
+        }
+    },
+
+    // Save settings to database
+    saveSettings: async function() {
+        try {
+            const settings = this.getSettings();
+            
+            const response = await fetch('/api/prompt/user-settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(settings)
+            });
+            
+            if (response.ok) {
+                console.log('Göktuğ kullanıcısının ayarları kaydedildi:', settings);
+                this.showSaveMessage();
+            } else {
+                console.error('Ayarlar kaydedilemedi');
+            }
+        } catch (error) {
+            console.error('Ayar kaydetme hatası:', error);
+        }
+    },
+
+    // Show save success message
+    showSaveMessage: function() {
+        // Create or update save indicator
+        let indicator = document.querySelector('.save-indicator');
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.className = 'save-indicator';
+            indicator.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-size: 14px;
+                z-index: 1000;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            `;
+            document.body.appendChild(indicator);
+        }
+        
+        indicator.textContent = 'Ayarlar kaydedildi ✓';
+        indicator.style.opacity = '1';
+        
+        // Hide after 2 seconds
+        setTimeout(() => {
+            indicator.style.opacity = '0';
+        }, 2000);
+    },
+
+    // Apply settings from database to UI
+    applySettings: function(settings) {
+        if (!settings || typeof settings !== 'object') {
+            console.warn('Geçersiz ayarlar, varsayılan değerler kullanılıyor');
+            return;
+        }
+        
+        // Apply each setting to the UI
+        Object.keys(settings).forEach(key => {
+            const element = document.querySelector(`[data-setting="${key}"]`);
+            if (element) {
+                if (element.type === 'checkbox') {
+                    element.checked = settings[key];
+                } else if (element.tagName === 'SELECT') {
+                    element.value = settings[key];
+                } else if (element.type === 'number') {
+                    element.value = settings[key];
+                } else {
+                    element.value = settings[key];
+                }
+                
+                // Trigger change event to update any dependent UI
+                element.dispatchEvent(new Event('change'));
             }
         });
-    },
-
-    // Load settings from storage
-    loadSettings: function() {
-        const savedSettings = Utils.storage.get('userSettings', this.defaultSettings);
-        this.setSettings(savedSettings);
-    },
-
-    // Save settings to storage
-    saveSettings: function() {
-        const currentSettings = this.getSettings();
-        Utils.storage.set('userSettings', currentSettings);
         
-        // Show feedback
-        Utils.showNotification('Ayarlar kaydedildi', 'success', 2000);
-        
-        console.log('Settings saved:', currentSettings);
-        return currentSettings;
+        console.log('Ayarlar UI\'ya uygulandı:', settings);
     },
 
     // Reset to default settings
     resetSettings: function() {
         if (confirm('Tüm ayarları varsayılan değerlere sıfırlamak istediğinizden emin misiniz?')) {
-            this.setSettings(this.defaultSettings);
+            this.applySettings(this.defaultSettings);
             this.saveSettings();
-            Utils.showNotification('Ayarlar sıfırlandı', 'info');
         }
-    },
-
-    // Reset to defaults (programmatic)
-    reset: function() {
-        this.setSettings(this.defaultSettings);
     },
 
     // Validate settings
     validateSettings: function(settings) {
-        const errors = [];
-
-        if (settings.creativity < 0 || settings.creativity > 100) {
-            errors.push('Yaratıcılık değeri 0-100 arasında olmalıdır');
-        }
-
-        if (!['tr', 'en'].includes(settings.language)) {
-            errors.push('Geçersiz dil seçimi');
-        }
-
-        return {
-            valid: errors.length === 0,
-            errors: errors
-        };
-    },
-
-    // Export settings as JSON
-    exportSettings: function() {
-        const settings = this.getSettings();
-        const dataStr = JSON.stringify(settings, null, 2);
-        Utils.downloadText(dataStr, 'haber_ayarlari.json');
-    },
-
-    // Import settings from JSON
-    importSettings: function(jsonString) {
-        try {
-            const settings = JSON.parse(jsonString);
-            const validation = this.validateSettings(settings);
-            
-            if (validation.valid) {
-                this.setSettings(settings);
-                this.saveSettings();
-                Utils.showNotification('Ayarlar içe aktarıldı', 'success');
-                return true;
-            } else {
-                Utils.showNotification('Geçersiz ayar dosyası: ' + validation.errors.join(', '), 'danger');
-                return false;
-            }
-        } catch (error) {
-            Utils.showNotification('Ayar dosyası okunamadı', 'danger');
+        // Basic validation
+        if (typeof settings !== 'object') return false;
+        
+        // Validate specific fields
+        if (settings.tag_count && (settings.tag_count < 1 || settings.tag_count > 10)) {
             return false;
         }
-    },
-
-    // Get setting by key
-    getSetting: function(key) {
-        const settings = this.getSettings();
-        return settings[key];
-    },
-
-    // Set individual setting
-    setSetting: function(key, value) {
-        if (this.elements[key]) {
-            const element = this.elements[key];
-            
-            if (element.type === 'checkbox') {
-                element.checked = value;
-            } else {
-                element.value = value;
-            }
-            
-            this.handleSettingChange({ target: element });
-        }
-    },
-
-    // Check if auto-save is enabled
-    isAutoSaveEnabled: function() {
-        return this.getSetting('autoSave') !== false;
+        
+        return true;
     }
 };
 
-// Export for global access
-window.SettingsComponent = SettingsComponent;
+// Export for use in other modules
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = SettingsComponent;
+}
