@@ -23,13 +23,12 @@ const MainContentComponent = {
             // Settings elements
             targetCategory: document.getElementById('targetCategory'),
             writingStyle: document.getElementById('writingStyle'),
-            preserveNames: document.getElementById('preserveNames'),
+            titleCityInfo: document.getElementById('titleCityInfo'),
+            nameCensorship: document.getElementById('nameCensorship'),
             removeCompanyInfo: document.getElementById('removeCompanyInfo'),
             removePlateInfo: document.getElementById('removePlateInfo'),
-            includeCityInfo: document.getElementById('includeCityInfo'),
-            creativityLevel: document.getElementById('creativityLevel'),
-            creativityValue: document.getElementById('creativityValue'),
             outputFormat: document.getElementById('outputFormat'),
+            tagCount: document.getElementById('tagCount'),
             customInstructions: document.getElementById('customInstructions'),
             
             // Result elements
@@ -52,11 +51,6 @@ const MainContentComponent = {
             this.elements.processBtn.addEventListener('click', this.processNews.bind(this));
         }
 
-        // Settings events
-        if (this.elements.creativityLevel) {
-            this.elements.creativityLevel.addEventListener('input', this.updateCreativityValue.bind(this));
-        }
-
         // Auto-save settings on change
         this.bindSettingsEvents();
 
@@ -67,8 +61,8 @@ const MainContentComponent = {
     // Bind settings events for auto-save
     bindSettingsEvents: function() {
         const settingsElements = [
-            'targetCategory', 'writingStyle', 'preserveNames', 'removeCompanyInfo',
-            'removePlateInfo', 'includeCityInfo', 'creativityLevel', 'outputFormat', 'customInstructions'
+            'targetCategory', 'writingStyle', 'titleCityInfo', 'nameCensorship',
+            'removeCompanyInfo', 'removePlateInfo', 'outputFormat', 'tagCount', 'customInstructions'
         ];
 
         settingsElements.forEach(elementId => {
@@ -130,13 +124,7 @@ const MainContentComponent = {
         this.elements.processBtn.disabled = !isValid;
     },
 
-    // Update creativity value display
-    updateCreativityValue: function() {
-        if (!this.elements.creativityLevel || !this.elements.creativityValue) return;
-        
-        const value = this.elements.creativityLevel.value;
-        this.elements.creativityValue.textContent = `${value} / 10`;
-    },
+
 
     // Handle keyboard shortcuts
     handleKeyboardShortcuts: function(e) {
@@ -212,12 +200,12 @@ const MainContentComponent = {
         return {
             targetCategory: this.elements.targetCategory?.value || 'auto',
             writingStyle: this.elements.writingStyle?.value || 'formal',
-            preserveNames: this.elements.preserveNames?.checked || false,
+            titleCityInfo: this.elements.titleCityInfo?.value || 'exclude',
+            nameCensorship: this.elements.nameCensorship?.value || 'initials',
             removeCompanyInfo: this.elements.removeCompanyInfo?.checked || false,
             removePlateInfo: this.elements.removePlateInfo?.checked || false,
-            includeCityInfo: this.elements.includeCityInfo?.checked || false,
-            creativityLevel: parseInt(this.elements.creativityLevel?.value || 5),
             outputFormat: this.elements.outputFormat?.value || 'json',
+            tagCount: parseInt(this.elements.tagCount?.value || 5),
             customInstructions: this.elements.customInstructions?.value.trim() || ''
         };
     },
@@ -325,9 +313,6 @@ const MainContentComponent = {
                 element.checked = savedSettings[key];
             } else if (element.type === 'range') {
                 element.value = savedSettings[key];
-                if (key === 'creativityLevel') {
-                    this.updateCreativityValue();
-                }
             } else {
                 element.value = savedSettings[key];
             }

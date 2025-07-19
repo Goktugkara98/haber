@@ -12,6 +12,15 @@
 /* Import loading area styles */
 @import url('components/loading.css');
 
+/* Content Area Styles - Import all component CSS */
+
+@import 'components/text-input.css';
+@import 'components/settings.css';
+@import 'components/results.css';
+@import 'components/loading.css';
+@import 'components/main-content.css';
+@import 'components/tooltips.css';
+
 /* General content area styles */
 .content-wrapper {
     min-height: 80vh;

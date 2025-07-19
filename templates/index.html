@@ -44,12 +44,12 @@
         <div class="prompt-settings-body">
             <!-- Genel Ayarlar -->
             <div class="settings-section">
-                <h3>Genel Ayarlar</h3>
+                <h6 class="settings-section-title" data-tooltip="gorev_tanimi">Genel Ayarlar</h6>
                 
                 <div class="setting-item">
-                    <label class="setting-label" for="targetCategory">Hedef Kategori</label>
+                    <label class="setting-label" for="targetCategory" data-tooltip="muhtemel_kategori">Hedef Kategori</label>
                     <select id="targetCategory" class="setting-select">
-                        <option value="auto">Otomatik Belirle</option>
+                        <option value="auto">Otomatik Belirleme</option>
                         <option value="Asayiş">Asayiş</option>
                         <option value="Gündem">Gündem</option>
                         <option value="Ekonomi">Ekonomi</option>
@@ -64,77 +64,99 @@
                         <option value="Magazin">Magazin</option>
                         <option value="Genel">Genel</option>
                     </select>
-                    <div class="setting-description">Haberin hangi kategoriye ait olacağını belirleyin</div>
+                    <div class="setting-description">Haberin hangi kategoriye ait olacağını belirler</div>
                 </div>
                 
                 <div class="setting-item">
-                    <label class="setting-label" for="writingStyle">Yazım Stili</label>
+                    <label class="setting-label" for="writingStyle" data-tooltip="kurumsal_dil">Yazım Stili</label>
                     <select id="writingStyle" class="setting-select">
-                        <option value="formal">Resmi/Kurumsal</option>
+                        <option value="formal">Resmi</option>
+                        <option value="semiformal">Yarı Resmi</option>
                         <option value="neutral">Nötr</option>
-                        <option value="engaging">İlgi Çekici</option>
                     </select>
-                    <div class="setting-description">Haberin yazım tarzını belirleyin</div>
+                    <div class="setting-description">Haberin yazım tarzını belirler</div>
                 </div>
             </div>
             
             <!-- İçerik Ayarları -->
             <div class="settings-section">
-                <h3>İçerik Ayarları</h3>
+                <h6 class="settings-section-title" data-tooltip="ozgunluk">İçerik Ayarları</h6>
                 
+                <!-- Başlık Ayarları -->
                 <div class="setting-item">
-                    <div class="setting-checkbox-group">
-                        <div class="setting-checkbox-item">
-                            <input type="checkbox" id="preserveNames" class="setting-checkbox" checked>
-                            <label for="preserveNames" class="setting-checkbox-label">İsimleri Sansürle (A.B. formatında)</label>
-                        </div>
-                        <div class="setting-checkbox-item">
-                            <input type="checkbox" id="removeCompanyInfo" class="setting-checkbox" checked>
-                            <label for="removeCompanyInfo" class="setting-checkbox-label">Şirket Bilgilerini Kaldır</label>
-                        </div>
-                        <div class="setting-checkbox-item">
-                            <input type="checkbox" id="removePlateInfo" class="setting-checkbox" checked>
-                            <label for="removePlateInfo" class="setting-checkbox-label">Plaka Bilgilerini Kaldır</label>
-                        </div>
-                        <div class="setting-checkbox-item">
-                            <input type="checkbox" id="includeCityInfo" class="setting-checkbox" checked>
-                            <label for="includeCityInfo" class="setting-checkbox-label">Şehir Bilgisini Özette Belirt</label>
-                        </div>
-                    </div>
+                    <label class="setting-label" for="titleCityInfo" data-tooltip="etkili_baslik">Başlıkta Şehir Bilgisi</label>
+                    <select id="titleCityInfo" class="setting-select">
+                        <option value="exclude">İçermesin</option>
+                        <option value="include">İçersin</option>
+                    </select>
+                    <div class="setting-description">Başlıkta şehir bilgisinin yer alıp almayacağını belirler</div>
                 </div>
                 
+                <!-- İsim Sansürleme -->
                 <div class="setting-item">
-                    <label class="setting-label" for="creativityLevel">Yaratıcılık Seviyesi</label>
-                    <div class="setting-range-group">
-                        <input type="range" id="creativityLevel" class="setting-range" min="1" max="10" value="5">
-                        <div class="setting-range-value" id="creativityValue">5 / 10</div>
+                    <label class="setting-label" for="nameCensorship" data-tooltip="ozgun_haber_metni">İsim Sansürleme</label>
+                    <select id="nameCensorship" class="setting-select">
+                        <option value="initials">G.K. (İlk harfler)</option>
+                        <option value="partial">Göktuğ K. (İsim + Soyisim baş harfi)</option>
+                        <option value="none">Sansürleme</option>
+                    </select>
+                    <div class="setting-description">Kişi isimlerinin nasıl gösterileceğini belirler</div>
+                </div>
+                
+                <!-- Şirket Bilgileri -->
+                <div class="setting-item">
+                    <div class="setting-toggle">
+                        <input type="checkbox" id="removeCompanyInfo" class="setting-checkbox">
+                        <label for="removeCompanyInfo" class="setting-toggle-label">
+                            <span class="setting-toggle-slider"></span>
+                            Şirket Bilgilerini Kaldır
+                        </label>
                     </div>
-                    <div class="setting-description">Yeniden yazma sırasında ne kadar yaratıcı olunacağını belirler</div>
+                    <div class="setting-description">Özel şirket bilgilerini haberde göstermez</div>
+                </div>
+                
+                <!-- Plaka Bilgileri -->
+                <div class="setting-item">
+                    <div class="setting-toggle">
+                        <input type="checkbox" id="removePlateInfo" class="setting-checkbox">
+                        <label for="removePlateInfo" class="setting-toggle-label">
+                            <span class="setting-toggle-slider"></span>
+                            Plaka Bilgilerini Kaldır
+                        </label>
+                    </div>
+                    <div class="setting-description">Araç plaka bilgilerini haberde göstermez</div>
                 </div>
             </div>
             
             <!-- Çıktı Ayarları -->
             <div class="settings-section">
-                <h3>Çıktı Ayarları</h3>
+                <h6 class="settings-section-title" data-tooltip="ciktinin_formati">Çıktı Ayarları</h6>
                 
                 <div class="setting-item">
                     <label class="setting-label" for="outputFormat">Çıktı Formatı</label>
                     <select id="outputFormat" class="setting-select">
-                        <option value="json">JSON (Yapılandırılmış)</option>
-                        <option value="text">Düz Metin</option>
+                        <option value="json">JSON</option>
+                        <option value="text">Metin</option>
                         <option value="html">HTML</option>
                     </select>
-                    <div class="setting-description">Sonucun hangi formatta döneceğini belirleyin</div>
+                    <div class="setting-description">İşlenmiş haberin hangi formatta döneceğini belirler</div>
+                </div>
+                
+                <div class="setting-item">
+                    <label class="setting-label" for="tagCount" data-tooltip="etiketler">Etiket Sayısı</label>
+                    <select id="tagCount" class="setting-select">
+                        <option value="3">3 Etiket</option>
+                        <option value="5" selected>5 Etiket</option>
+                        <option value="7">7 Etiket</option>
+                        <option value="10">10 Etiket</option>
+                    </select>
+                    <div class="setting-description">Haber için oluşturulacak etiket sayısını belirler</div>
                 </div>
                 
                 <div class="setting-item">
                     <label class="setting-label" for="customInstructions">Özel Talimatlar</label>
-                    <textarea 
-                        id="customInstructions" 
-                        class="setting-textarea" 
-                        placeholder="Ek talimatlarınızı buraya yazın..."
-                    ></textarea>
-                    <div class="setting-description">AI'ya özel talimatlar verebilirsiniz</div>
+                    <textarea id="customInstructions" class="setting-textarea" rows="3" placeholder="Ek talimatlarınızı buraya yazın..."></textarea>
+                    <div class="setting-description">AI'ya verilecek ek özel talimatlar</div>
                 </div>
             </div>
         </div>
