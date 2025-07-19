@@ -1,0 +1,38 @@
+/* Content CSS - Imports for content area components */
+
+/* Import text input area styles */
+@import url('components/text-input.css');
+
+/* Import settings area styles */
+@import url('components/settings.css');
+
+/* Import result area styles */
+@import url('components/results.css');
+
+/* Import loading area styles */
+@import url('components/loading.css');
+
+/* General content area styles */
+.content-wrapper {
+    min-height: 80vh;
+    padding: var(--spacing-xl) 0;
+}
+
+.content-section {
+    margin-bottom: var(--spacing-xl);
+}
+
+.content-header {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.content-header h2 {
+    color: var(--dark-color);
+    font-weight: 700;
+}
+
+.content-header p {
+    color: var(--secondary-color);
+    font-size: 1.1rem;
+}

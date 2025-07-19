@@ -1,0 +1,17 @@
+/* Main Style CSS - Import all other CSS files */
+
+/* Import base styles (global styles, colors, fonts, body properties) */
+@import url('base.css');
+
+/* Import content area styles */
+@import url('content.css');
+
+/* Import component-specific styles */
+@import url('components/navbar.css');
+@import url('components/main-content.css');
+@import url('components/text-input.css');
+@import url('components/settings.css');
+@import url('components/results.css');
+@import url('components/loading.css');
+
+/* Any additional custom styles can be added here */

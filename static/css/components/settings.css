@@ -1,0 +1,120 @@
+/* Settings Component Styles */
+
+.settings-section {
+    background: var(--white-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-lg);
+}
+
+.settings-section .section-title {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: var(--spacing-lg);
+    font-size: 1.2rem;
+    border-bottom: 2px solid var(--light-color);
+    padding-bottom: var(--spacing-sm);
+}
+
+.settings-group {
+    margin-bottom: var(--spacing-lg);
+}
+
+.settings-group:last-child {
+    margin-bottom: 0;
+}
+
+.settings-group .form-label {
+    font-weight: 500;
+    color: var(--dark-color);
+    margin-bottom: var(--spacing-sm);
+}
+
+.settings-group .form-text {
+    color: var(--secondary-color);
+    font-size: 0.875rem;
+    margin-top: var(--spacing-xs);
+}
+
+/* Rules textarea specific */
+#rules {
+    min-height: 100px;
+    background-color: #f8f9fa;
+    border: 1px dashed #dee2e6;
+}
+
+#rules:focus {
+    background-color: var(--white-color);
+    border-style: solid;
+}
+
+/* Toggle switches */
+.form-check-input {
+    width: 2rem;
+    height: 1rem;
+    border-radius: 1rem;
+    transition: all var(--transition-normal);
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.form-check-label {
+    font-weight: 500;
+    color: var(--dark-color);
+    margin-left: var(--spacing-sm);
+}
+
+/* Select dropdowns */
+.form-select {
+    border-radius: var(--border-radius-md);
+    border: 1px solid #dee2e6;
+    transition: all var(--transition-fast);
+}
+
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Range sliders */
+.form-range {
+    transition: all var(--transition-fast);
+}
+
+.form-range::-webkit-slider-thumb {
+    background-color: var(--primary-color);
+    transition: all var(--transition-fast);
+}
+
+.form-range::-webkit-slider-thumb:hover {
+    background-color: #0056b3;
+    transform: scale(1.1);
+}
+
+/* Settings accordion */
+.settings-accordion .accordion-item {
+    border: none;
+    margin-bottom: var(--spacing-sm);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.settings-accordion .accordion-header button {
+    background-color: var(--light-color);
+    border: none;
+    color: var(--dark-color);
+    font-weight: 500;
+}
+
+.settings-accordion .accordion-header button:not(.collapsed) {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+}
+
+.settings-accordion .accordion-body {
+    background-color: var(--white-color);
+}

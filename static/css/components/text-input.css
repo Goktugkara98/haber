@@ -1,0 +1,85 @@
+/* Text Input Component Styles */
+
+.text-input-section {
+    background: var(--white-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-lg);
+}
+
+.text-input-section .form-label {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: var(--spacing-sm);
+    font-size: 1.1rem;
+}
+
+.text-input-section .form-control {
+    border: 2px solid #e9ecef;
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    font-size: 1rem;
+    line-height: 1.5;
+    transition: all var(--transition-normal);
+    resize: vertical;
+    min-height: 120px;
+}
+
+.text-input-section .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+.text-input-section .form-control::placeholder {
+    color: var(--secondary-color);
+    opacity: 0.7;
+}
+
+.text-input-section .character-count {
+    text-align: right;
+    font-size: 0.875rem;
+    color: var(--secondary-color);
+    margin-top: var(--spacing-xs);
+}
+
+.text-input-section .character-count.warning {
+    color: var(--warning-color);
+}
+
+.text-input-section .character-count.danger {
+    color: var(--danger-color);
+}
+
+/* News Text Input Specific */
+#newsText {
+    min-height: 200px;
+    font-family: 'Courier New', monospace;
+    background-color: #fafafa;
+}
+
+#newsText:focus {
+    background-color: var(--white-color);
+}
+
+/* Input validation styles */
+.form-control.is-valid {
+    border-color: var(--success-color);
+}
+
+.form-control.is-invalid {
+    border-color: var(--danger-color);
+}
+
+.valid-feedback {
+    color: var(--success-color);
+    font-size: 0.875rem;
+    margin-top: var(--spacing-xs);
+}
+
+.invalid-feedback {
+    color: var(--danger-color);
+    font-size: 0.875rem;
+    margin-top: var(--spacing-xs);
+}
