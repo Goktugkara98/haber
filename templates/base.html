@@ -89,6 +89,9 @@
     <!-- Base utilities (must load first) -->
     <script src="{{ url_for('static', filename='js/base.js') }}"></script>
     
+    <!-- Centralized Settings Manager (must load early) -->
+    <script src="{{ url_for('static', filename='js/centralized-settings.js') }}"></script>
+    
     <!-- Component modules -->
     <script src="{{ url_for('static', filename='js/components/navbar.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/tooltips.js') }}"></script>
@@ -98,6 +101,7 @@
     <script src="{{ url_for('static', filename='js/components/results.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/loading.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/preview-modal.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/components/settings-listener.js') }}"></script>
     
     <!-- Prompt Settings Manager -->
     <script src="{{ url_for('static', filename='js/prompt-settings.js') }}"></script>

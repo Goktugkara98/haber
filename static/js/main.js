@@ -4,12 +4,22 @@
 // Main Application Controller
 const App = {
     // Initialize the application
-    init: function() {
+    init: async function() {
         console.log('Haber Uygulaması başlatılıyor...');
         
         // Initialize base utilities first
         if (typeof Utils !== 'undefined') {
             console.log('Base utilities loaded');
+        }
+        
+        // Initialize centralized settings manager first
+        if (window.centralizedSettings) {
+            try {
+                await window.centralizedSettings.init();
+                console.log('Centralized settings manager initialized');
+            } catch (error) {
+                console.error('Failed to initialize centralized settings:', error);
+            }
         }
         
         // Initialize content controller
@@ -203,8 +213,8 @@ function downloadText() {
 }
 
 // Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    App.init();
+document.addEventListener('DOMContentLoaded', async function() {
+    await App.init();
 });
 
 // Export for global access

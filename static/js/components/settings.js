@@ -104,27 +104,58 @@ const SettingsComponent = {
         }
     },
 
-    // Save settings to database
+    // Save settings to database using centralized manager
     saveSettings: async function() {
         try {
             const settings = this.getSettings();
             
+            // Validate settings
+            if (!this.validateSettings(settings)) {
+                console.warn('Ayarlar geçersiz, kaydetme iptal edildi');
+                return;
+            }
+            
+            // Use centralized settings manager for saving
+            if (window.centralizedSettings) {
+                await window.centralizedSettings.updateSettings(settings);
+                console.log('Ayarlar centralized manager ile kaydedildi:', settings);
+            } else {
+                console.error('Centralized settings manager not available');
+                // Fallback to direct API call
+                await this.saveSettingsDirectly(settings);
+            }
+            
+        } catch (error) {
+            console.error('Ayar kaydetme hatası:', error);
+        }
+    },
+    
+    // Fallback method for direct API saving
+    saveSettingsDirectly: async function(settings) {
+        try {
             const response = await fetch('/api/prompt/user-settings', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(settings)
+                body: JSON.stringify({
+                    settings: settings
+                })
             });
             
             if (response.ok) {
-                console.log('Göktuğ kullanıcısının ayarları kaydedildi:', settings);
-                this.showSaveMessage();
+                const result = await response.json();
+                if (result.success) {
+                    console.log('Ayarlar başarıyla kaydedildi (direct):', settings);
+                    this.showSaveMessage();
+                } else {
+                    console.error('Ayar kaydetme hatası:', result.error);
+                }
             } else {
-                console.error('Ayarlar kaydedilemedi');
+                console.error('API isteği başarısız:', response.status);
             }
         } catch (error) {
-            console.error('Ayar kaydetme hatası:', error);
+            console.error('Direct save error:', error);
         }
     },
 

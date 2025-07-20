@@ -35,15 +35,24 @@ const PreviewModal = {
     
     async show(newsText) {
         try {
+            console.log('=== PREVIEW MODAL DEBUG START ===');
             console.log('Showing preview modal with text:', newsText.substring(0, 50) + '...');
             
-            // Get current settings
-            const settings = this.getCurrentSettings();
-            console.log('Current settings:', settings);
+            // Show loading state
+            this.showLoading();
+            
+            // Get current settings asynchronously
+            console.log('About to get current settings...');
+            const settings = await this.getCurrentSettings();
+            console.log('=== SETTINGS RECEIVED IN PREVIEW MODAL ===');
+            console.log('Full settings object:', JSON.stringify(settings, null, 2));
+            console.log('nameCensorship specifically:', settings.nameCensorship);
+            console.log('typeof nameCensorship:', typeof settings.nameCensorship);
             
             // Build prompt
+            console.log('Building prompt with these settings...');
             const prompt = this.buildPrompt(newsText, settings);
-            console.log('Built prompt:', prompt.substring(0, 100) + '...');
+            console.log('Built prompt length:', prompt.length);
             
             // Update modal content
             this.updateContent(settings, prompt);
@@ -51,49 +60,76 @@ const PreviewModal = {
             // Show modal
             this.showModal();
             
+            // Hide loading state
+            this.hideLoading();
+            
+            console.log('=== PREVIEW MODAL DEBUG END ===');
+            
         } catch (error) {
             console.error('Error showing preview modal:', error);
-            alert('Önizleme yüklenirken hata oluştu: ' + error.message);
+            this.hideLoading();
+            alert('Önizleme yüklenirken hata oluştu: ' + (error.message || 'Bilinmeyen hata'));
         }
     },
     
-    getCurrentSettings() {
+    async getCurrentSettings() {
         try {
-            // Primary: Get settings from PromptSettingsManager
-            if (window.promptSettingsManager && window.promptSettingsManager.getCurrentSettings) {
-                const settings = window.promptSettingsManager.getCurrentSettings();
-                console.log('Settings from PromptSettingsManager:', settings);
+            console.log('=== GETTING CURRENT SETTINGS FROM CENTRALIZED MANAGER ===');
+            
+            // Use centralized settings manager
+            if (window.centralizedSettings && window.centralizedSettings.isReady()) {
+                const settings = window.centralizedSettings.getSettings();
+                console.log('Settings from centralized manager:', JSON.stringify(settings, null, 2));
                 return settings;
+            } else {
+                console.warn('Centralized settings manager not ready, waiting...');
+                
+                // Wait for centralized settings to be ready
+                return new Promise((resolve) => {
+                    const checkReady = () => {
+                        if (window.centralizedSettings && window.centralizedSettings.isReady()) {
+                            const settings = window.centralizedSettings.getSettings();
+                            console.log('Settings from centralized manager (after wait):', JSON.stringify(settings, null, 2));
+                            resolve(settings);
+                        } else {
+                            setTimeout(checkReady, 100);
+                        }
+                    };
+                    checkReady();
+                });
             }
             
-            // Fallback: Return default settings
-            console.warn('PromptSettingsManager not available, using defaults');
-            return {
-                targetCategory: 'auto',
-                writingStyle: 'formal',
-                titleCityInfo: 'exclude',
-                nameCensorship: 'partial',
-                removeCompanyInfo: true,
-                removePlateInfo: true,
-                outputFormat: 'json',
-                tagCount: 5,
-                customInstructions: ''
-            };
-            
         } catch (error) {
-            console.error('Error getting current settings:', error);
-            // Return default settings as fallback
-            return {
-                targetCategory: 'auto',
-                writingStyle: 'formal',
-                titleCityInfo: 'exclude',
-                nameCensorship: 'partial',
-                removeCompanyInfo: true,
-                removePlateInfo: true,
-                outputFormat: 'json',
-                tagCount: 5,
-                customInstructions: ''
-            };
+            console.error('Error getting current settings from centralized manager:', error);
+            return this.getDefaultSettings();
+        }
+    },
+    
+    getDefaultSettings() {
+        return {
+            targetCategory: 'auto',
+            writingStyle: 'formal',
+            titleCityInfo: 'exclude',
+            nameCensorship: 'partial',
+            removeCompanyInfo: true,
+            removePlateInfo: true,
+            outputFormat: 'json',
+            tagCount: 5,
+            customInstructions: ''
+        };
+    },
+    
+    showLoading() {
+        const loadingElement = document.getElementById('previewLoading');
+        if (loadingElement) {
+            loadingElement.style.display = 'block';
+        }
+    },
+    
+    hideLoading() {
+        const loadingElement = document.getElementById('previewLoading');
+        if (loadingElement) {
+            loadingElement.style.display = 'none';
         }
     },
     
@@ -199,11 +235,17 @@ Sen, kurumsal bir gazetenin web sitesi için içerik üreten profesyonel bir yap
         let contentReq = '• ÖZGÜN HABER METNİ: Tüm bilgileri koruyarak, metni özgün cümlelerle baştan yaz';
         
         // Name censorship rule - modular
-        const nameCensorship = settings.nameCensorship || 'partial';
-        const nameCensorshipText = this.getNameCensorshipText(nameCensorship);
-        if (nameCensorshipText) {
-            contentReq += `. ${nameCensorshipText}`;
-            console.log('DEBUG Frontend: Name censorship rule applied:', nameCensorship);
+        // Get the actual setting value, default to 'none' if not set
+        const nameCensorship = settings.nameCensorship !== undefined ? settings.nameCensorship : 'none';
+        console.log('DEBUG: Building content requirements with nameCensorship:', nameCensorship);
+        
+        // Only add name censorship text if it's not 'none'
+        if (nameCensorship !== 'none') {
+            const nameCensorshipText = this.getNameCensorshipText(nameCensorship);
+            if (nameCensorshipText) {
+                contentReq += `. ${nameCensorshipText}`;
+                console.log('DEBUG: Applied name censorship rule:', nameCensorshipText);
+            }
         }
         
         // Company info removal - modular
@@ -454,7 +496,18 @@ ${newsText}`;
     },
     
     getNameCensorshipText(nameCensorship) {
-        switch (nameCensorship) {
+        console.log('DEBUG: Getting name censorship text for:', nameCensorship);
+        
+        // Ensure we have a valid value
+        if (!nameCensorship) {
+            console.warn('No nameCensorship value provided, defaulting to none');
+            return '';
+        }
+        
+        // Convert to string in case it's a number or something else
+        const censorship = String(nameCensorship).toLowerCase().trim();
+        
+        switch (censorship) {
             case 'full':
                 return 'İsimleri tamamen sansürle (örn: A.B.)';
             case 'partial':
@@ -462,7 +515,8 @@ ${newsText}`;
             case 'none':
                 return '';
             default:
-                return 'İsimleri sansürle (örn: A.B.)';
+                console.warn('Unknown nameCensorship value:', nameCensorship, 'defaulting to none');
+                return '';
         }
     },
     

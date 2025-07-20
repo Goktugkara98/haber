@@ -38,12 +38,24 @@ class PromptSettingsManager {
             this.configData = result.data;
             
             // Load user settings
+            console.log('=== LOADING USER SETTINGS FROM API ===');
             const userResponse = await fetch('/api/prompt/user-settings');
+            console.log('User settings API response status:', userResponse.status);
+            
             if (userResponse.ok) {
                 const userResult = await userResponse.json();
+                console.log('User settings API result:', JSON.stringify(userResult, null, 2));
+                
                 if (userResult.success) {
-                    this.userSettings = userResult.data || {};
+                    // Extract the actual settings from the nested structure
+                    this.userSettings = userResult.data.settings || {};
+                    console.log('Loaded userSettings into PromptSettingsManager:', JSON.stringify(this.userSettings, null, 2));
+                    console.log('nameCensorship specifically:', this.userSettings.nameCensorship);
+                } else {
+                    console.warn('User settings API returned success=false:', userResult.error);
                 }
+            } else {
+                console.warn('User settings API request failed with status:', userResponse.status);
             }
             
         } catch (error) {
@@ -58,8 +70,9 @@ class PromptSettingsManager {
             return;
         }
 
-        // Show all settings summary
-        this.updateAllSettingsDisplay();
+        // Show all settings summary - DISABLED to prevent cross-contamination
+        // this.updateAllSettingsDisplay();
+        console.log('updateAllSettingsDisplay disabled to prevent cross-contamination');
         
         // Bind edit button event
         this.bindEditButton();
@@ -273,8 +286,9 @@ class PromptSettingsManager {
         // Save to backend
         this.saveUserSetting(settingKey, value);
         
-        // Update all settings display
-        this.updateAllSettingsDisplay();
+        // Update all settings display - DISABLED to prevent cross-contamination
+        // this.updateAllSettingsDisplay();
+        console.log('updateAllSettingsDisplay disabled after setting change to prevent cross-contamination');
     }
 
     updateRangeValue(rangeElement) {
@@ -376,7 +390,9 @@ class PromptSettingsManager {
                 }).join(', ');
             }
         } else if (rule.rule_type === 'toggle') {
-            return value ? '<span class="text-success">✓ Evet</span>' : '<span class="text-danger">✗ Hayır</span>';
+            // Convert string values from database to boolean for proper display
+            const boolValue = value === true || value === 'true' || value === 'True';
+            return boolValue ? '<span class="text-success">✓ Evet</span>' : '<span class="text-danger">✗ Hayır</span>';
         } else if (rule.rule_type === 'range') {
             return `${value} / ${rule.validation_rules ? JSON.parse(rule.validation_rules).max || 10 : 10}`;
         }
@@ -589,8 +605,9 @@ class PromptSettingsManager {
                 this.userSettings = result.data;
             }
             
-            // Instantly update the main settings display without page reload
-            this.updateAllSettingsDisplay();
+            // Instantly update the main settings display without page reload - DISABLED to prevent cross-contamination
+            // this.updateAllSettingsDisplay();
+            console.log('updateAllSettingsDisplay disabled after save all to prevent cross-contamination');
             
             this.showToast('Tüm ayarlar başarıyla kaydedildi', 'success');
 
@@ -678,12 +695,15 @@ class PromptSettingsManager {
             const nameCensorshipInputs = document.querySelectorAll('input[data-setting="nameCensorship"]:checked');
             
             if (nameCensorshipSelects.length > 0) {
-                currentSettings.nameCensorship = nameCensorshipSelects[0].value || 'partial';
+                currentSettings.nameCensorship = nameCensorshipSelects[0].value !== undefined ? nameCensorshipSelects[0].value : 'partial';
             } else if (nameCensorshipInputs.length > 0) {
-                currentSettings.nameCensorship = nameCensorshipInputs[0].value || 'partial';
+                currentSettings.nameCensorship = nameCensorshipInputs[0].value !== undefined ? nameCensorshipInputs[0].value : 'partial';
             } else {
-                currentSettings.nameCensorship = this.userSettings.nameCensorship || 'partial';
+                // Use stored setting if available, otherwise default to 'partial'
+                currentSettings.nameCensorship = this.userSettings.nameCensorship !== undefined ? this.userSettings.nameCensorship : 'partial';
             }
+            
+            console.log('DEBUG: Name censorship setting - from UI elements:', nameCensorshipSelects.length + nameCensorshipInputs.length, 'from userSettings:', this.userSettings.nameCensorship, 'final value:', currentSettings.nameCensorship);
             
             // Get boolean settings from UI - improved detection
             // Company info removal
@@ -697,8 +717,14 @@ class PromptSettingsManager {
                 currentSettings.removeCompanyInfo = companyInfoSelect.value === 'true';
                 console.log('DEBUG: Company info removal from select:', companyInfoSelect.value);
             } else {
-                currentSettings.removeCompanyInfo = this.userSettings.removeCompanyInfo !== undefined ? this.userSettings.removeCompanyInfo : true;
-                console.log('DEBUG: Company info removal from stored settings:', currentSettings.removeCompanyInfo);
+                // Convert string values from database to boolean
+                const storedValue = this.userSettings.removeCompanyInfo;
+                if (storedValue !== undefined) {
+                    currentSettings.removeCompanyInfo = storedValue === true || storedValue === 'true' || storedValue === 'True';
+                } else {
+                    currentSettings.removeCompanyInfo = true; // default
+                }
+                console.log('DEBUG: Company info removal from stored settings:', storedValue, '-> converted to:', currentSettings.removeCompanyInfo);
             }
             
             // Plate info removal
@@ -712,8 +738,14 @@ class PromptSettingsManager {
                 currentSettings.removePlateInfo = plateInfoSelect.value === 'true';
                 console.log('DEBUG: Plate info removal from select:', plateInfoSelect.value);
             } else {
-                currentSettings.removePlateInfo = this.userSettings.removePlateInfo !== undefined ? this.userSettings.removePlateInfo : true;
-                console.log('DEBUG: Plate info removal from stored settings:', currentSettings.removePlateInfo);
+                // Convert string values from database to boolean
+                const storedValue = this.userSettings.removePlateInfo;
+                if (storedValue !== undefined) {
+                    currentSettings.removePlateInfo = storedValue === true || storedValue === 'true' || storedValue === 'True';
+                } else {
+                    currentSettings.removePlateInfo = true; // default
+                }
+                console.log('DEBUG: Plate info removal from stored settings:', storedValue, '-> converted to:', currentSettings.removePlateInfo);
             }
             
             // Get output format from UI
