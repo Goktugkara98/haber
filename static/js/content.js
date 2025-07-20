@@ -26,6 +26,10 @@ const ContentController = {
             LoadingComponent.init();
         }
         
+        if (window.PreviewModal) {
+            window.PreviewModal.init();
+        }
+        
         this.bindEvents();
         this.loadSavedData();
     },
@@ -179,8 +183,9 @@ const ContentController = {
             }
 
             // Restore settings if component exists
-            if (typeof SettingsComponent !== 'undefined' && savedData.settings) {
-                SettingsComponent.setSettings(savedData.settings);
+            if (typeof window.promptSettingsManager !== 'undefined' && savedData.settings) {
+                // Settings are automatically loaded from database, no need to restore
+                console.log('Settings will be loaded from database');
             }
 
             console.log('Saved data restored');

@@ -20,8 +20,18 @@ def get_db_connection():
             password=os.getenv('DB_PASSWORD', ''),
             database=os.getenv('DB_NAME', 'haber_editor'),
             charset='utf8mb4',
-            collation='utf8mb4_unicode_ci'
+            collation='utf8mb4_unicode_ci',
+            use_unicode=True
         )
+        
+        # Karakter seti ayarlarını zorla uygula
+        cursor = connection.cursor()
+        cursor.execute("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci")
+        cursor.execute("SET CHARACTER SET utf8mb4")
+        cursor.execute("SET character_set_connection = utf8mb4")
+        cursor.execute("SET character_set_client = utf8mb4")
+        cursor.execute("SET character_set_results = utf8mb4")
+        cursor.close()
         return connection
     except mysql.connector.Error as err:
         print(f"Database connection error: {err}")
@@ -35,9 +45,17 @@ def create_database_if_not_exists():
             user=os.getenv('DB_USER', 'root'),
             password=os.getenv('DB_PASSWORD', ''),
             charset='utf8mb4',
-            collation='utf8mb4_unicode_ci'
+            collation='utf8mb4_unicode_ci',
+            use_unicode=True
         )
         cursor = connection.cursor()
+        
+        # Karakter seti ayarlarını zorla uygula
+        cursor.execute("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci")
+        cursor.execute("SET CHARACTER SET utf8mb4")
+        cursor.execute("SET character_set_connection = utf8mb4")
+        cursor.execute("SET character_set_client = utf8mb4")
+        cursor.execute("SET character_set_results = utf8mb4")
         
         db_name = os.getenv('DB_NAME', 'haber_editor')
         cursor.execute(f"CREATE DATABASE IF NOT EXISTS {db_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")

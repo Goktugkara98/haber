@@ -17,14 +17,22 @@ class DatabaseConnection:
                 user='root',
                 password='',
                 charset='utf8mb4',
-                collation='utf8mb4_unicode_ci'
+                collation='utf8mb4_unicode_ci',
+                use_unicode=True,
+                connection_timeout=10
             )
             if self.connection.is_connected():
                 self.cursor = self.connection.cursor(dictionary=True)
-                print("MySQL veritabanına bağlanıldı")
+                # Karakter seti ayarlarını zorla uygula
+                self.cursor.execute("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci")
+                self.cursor.execute("SET CHARACTER SET utf8mb4")
+                self.cursor.execute("SET character_set_connection = utf8mb4")
+                self.cursor.execute("SET character_set_client = utf8mb4")
+                self.cursor.execute("SET character_set_results = utf8mb4")
+                print("MySQL database connected and character set configured")
                 return True
         except Error as e:
-            print(f"Veritabanı bağlantı hatası: {e}")
+            print(f"Database connection error: {e}")
             return False
     
     def disconnect(self):
@@ -32,7 +40,7 @@ class DatabaseConnection:
         if self.connection and self.connection.is_connected():
             self.cursor.close()
             self.connection.close()
-            print("MySQL bağlantısı kapatıldı")
+            print("MySQL connection closed")
     
     def execute_query(self, query, params=None, fetch_one=False, fetch_all=False):
         """SQL sorgusu çalıştırır"""

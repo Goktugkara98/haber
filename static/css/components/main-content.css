@@ -111,6 +111,15 @@
     overflow: hidden;
 }
 
+/* Settings Summary should fill remaining space */
+.settings-summary {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0 2rem 2rem 2rem;
+    overflow: hidden;
+}
+
 .prompt-settings-header {
     padding: 1.5rem 2rem 1rem 2rem;
     border-bottom: 1px solid #e5e5e5;

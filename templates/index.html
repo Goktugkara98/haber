@@ -41,154 +41,27 @@
             <p>Haber işleme parametrelerini ayarlayın</p>
         </div>
         
-        <div class="prompt-settings-body">
-            <!-- Genel Ayarlar -->
-            <div class="settings-section">
-                <h6 class="settings-section-title" data-tooltip="gorev_tanimi">Genel Ayarlar</h6>
-                
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <label for="targetCategory" class="form-label mb-0">Hedef Kategori</label>
-                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="TooltipComponent.showSettingEditModal('target_category', 'Hedef Kategori')">
-                            <i class="fas fa-edit"></i> Düzenle
-                        </button>
-                    </div>
-                    <select class="form-select" id="targetCategory" data-setting="target_category">
-                        <option value="auto" selected>Otomatik belirle</option>
-                        <option value="politics">Siyaset</option>
-                        <option value="economy">Ekonomi</option>
-                        <option value="sports">Spor</option>
-                        <option value="technology">Teknoloji</option>
-                        <option value="health">Sağlık</option>
-                        <option value="culture">Kültür</option>
-                        <option value="Asayiş">Asayiş</option>
-                        <option value="Gündem">Gündem</option>
-                        <option value="Siyaset">Siyaset</option>
-                        <option value="Spor">Spor</option>
-                        <option value="Teknoloji">Teknoloji</option>
-                        <option value="Sağlık">Sağlık</option>
-                        <option value="Yaşam">Yaşam</option>
-                        <option value="Eğitim">Eğitim</option>
-                        <option value="Dünya">Dünya</option>
-                        <option value="Kültür & Sanat">Kültür & Sanat</option>
-                        <option value="Magazin">Magazin</option>
-                        <option value="Genel">Genel</option>
-                    </select>
+        <!-- Settings Summary - Always Visible -->
+        <div class="settings-summary" id="settingsSummary">
+            <div class="settings-header">
+                <div class="settings-title">
+                    <i class="fas fa-list-check me-2"></i>
+                    Mevcut Ayarlar
                 </div>
-                
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <label for="writingStyle" class="form-label mb-0">Yazım Stili</label>
-                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="TooltipComponent.showSettingEditModal('writing_style', 'Yazım Stili')">
-                            <i class="fas fa-edit"></i> Düzenle
-                        </button>
-                    </div>
-                    <select class="form-select" id="writingStyle" data-setting="writing_style">
-                        <option value="formal">Resmi</option>
-                        <option value="semiformal">Yarı Resmi</option>
-                        <option value="neutral">Nötr</option>
-                    </select>
-                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="editSettingsBtn" title="Ayarları Düzenle">
+                    <i class="fas fa-edit me-1"></i>
+                    Düzenle
+                </button>
             </div>
-            
-            <!-- İçerik Ayarları -->
-            <div class="settings-section">
-                <h6 class="settings-section-title" data-tooltip="ozgunluk">İçerik Ayarları</h6>
-                
-                <!-- Başlık Ayarları -->
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <label for="titleCityInfo" class="form-label mb-0">Başlıkta Şehir Bilgisi</label>
-                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="TooltipComponent.showSettingEditModal('title_include_city', 'Başlık Şehir Bilgisi')">
-                            <i class="fas fa-edit"></i> Düzenle
-                        </button>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="titleCityInfo" data-setting="title_include_city" checked>
-                        <label class="form-check-label" for="titleCityInfo">
-                            Başlıkta şehir bilgisi dahil edilsin
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- İsim Sansürleme -->
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <label for="nameCensorship" class="form-label mb-0">İsim Sansürü</label>
-                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="TooltipComponent.showSettingEditModal('name_censorship', 'İsim Sansürü')">
-                            <i class="fas fa-edit"></i> Düzenle
-                        </button>
-                    </div>
-                    <select class="form-select" id="nameCensorship" data-setting="name_censorship">
-                        <option value="none">Sansür yok</option>
-                        <option value="initials">G.K. formatında</option>
-                        <option value="partial">Göktuğ K. formatında</option>
-                    </select>
-                </div>
-                
-                <!-- Şirket Bilgileri -->
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="companyInfo" data-setting="company_info_toggle" checked>
-                            <label class="form-check-label" for="companyInfo">
-                                Şirket/plaka bilgileri dahil edilsin
-                            </label>
+            <div class="settings-body">
+                <div id="allSettingsDisplay" class="settings-list">
+                    <!-- All settings will be displayed here -->
+                    <div class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">Ayarlar yükleniyor...</span>
                         </div>
-                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="TooltipComponent.showSettingEditModal('company_info_toggle', 'Şirket Bilgileri')">
-                            <i class="fas fa-edit"></i> Düzenle
-                        </button>
+                        <p class="small text-muted mt-2 mb-0">Ayarlar yükleniyor...</p>
                     </div>
-                </div>
-                
-                <!-- Plaka Bilgileri -->
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="removePlateInfo" data-setting="remove_plate_info" checked>
-                            <label class="form-check-label" for="removePlateInfo">
-                                Plaka bilgileri hariç tutulsun
-                            </label>
-                        </div>
-                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="TooltipComponent.showSettingEditModal('remove_plate_info', 'Plaka Bilgileri')">
-                            <i class="fas fa-edit"></i> Düzenle
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Çıktı Ayarları -->
-            <div class="settings-section">
-                <h6 class="settings-section-title" data-tooltip="ciktinin_formati">Çıktı Ayarları</h6>
-                
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <label for="outputFormat" class="form-label mb-0">Çıktı Formatı</label>
-                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="TooltipComponent.showSettingEditModal('output_format', 'Çıktı Formatı')">
-                            <i class="fas fa-edit"></i> Düzenle
-                        </button>
-                    </div>
-                    <select class="form-select" id="outputFormat" data-setting="output_format">
-                        <option value="json">JSON</option>
-                        <option value="text">Metin</option>
-                        <option value="html">HTML</option>
-                    </select>
-                </div>
-                
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <label for="tagCount" class="form-label mb-0">Etiket Sayısı</label>
-                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="TooltipComponent.showSettingEditModal('tag_count', 'Etiket Sayısı')">
-                            <i class="fas fa-edit"></i> Düzenle
-                        </button>
-                    </div>
-                    <input type="number" class="form-control" id="tagCount" data-setting="tag_count" value="5" min="1" max="10">
-                </div>
-                
-                <div class="setting-item">
-                    <label class="setting-label" for="customInstructions">Özel Talimatlar</label>
-                    <textarea id="customInstructions" class="setting-textarea" rows="3" placeholder="Ek talimatlarınızı buraya yazın..."></textarea>
-                    <div class="setting-description">AI'ya verilecek ek özel talimatlar</div>
                 </div>
             </div>
         </div>
@@ -217,5 +90,42 @@
 <div id="loadingSection" class="loading-section" style="display: none;">
     <div class="loading-spinner"></div>
     <p class="loading-text">Haber metni işleniyor, lütfen bekleyin...</p>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalLabel">
+                    <i class="fas fa-eye me-2"></i>
+                    AI Prompt Önizleme
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Prompt Preview Only -->
+                <div class="prompt-preview">
+                    <h6 class="mb-3">
+                        <i class="fas fa-robot me-2"></i>
+                        AI'ya Gönderilecek Prompt
+                    </h6>
+                    <div class="prompt-content">
+                        <pre id="promptDisplay" class="prompt-text"></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    İptal
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmProcessBtn">
+                    <i class="fas fa-paper-plane me-1"></i>
+                    Haber İşle
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

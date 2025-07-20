@@ -13,6 +13,10 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/tooltips.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/loading.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/settings-summary.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/preview-modal.css') }}">
     
     {% block extra_css %}{% endblock %}
 </head>
@@ -93,6 +97,10 @@
     <script src="{{ url_for('static', filename='js/components/settings.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/results.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/loading.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/components/preview-modal.js') }}"></script>
+    
+    <!-- Prompt Settings Manager -->
+    <script src="{{ url_for('static', filename='js/prompt-settings.js') }}"></script>
     
     <!-- Content controller -->
     <script src="{{ url_for('static', filename='js/content.js') }}"></script>

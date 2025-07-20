@@ -1,8 +1,17 @@
+-- Set character set and collation for the database
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+
 -- AI Prompt Settings Database Schema
 -- Extensible structure for managing AI prompt rules and configurations
 
+-- Set default character set and collation for the database
+CREATE DATABASE IF NOT EXISTS haber_editor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE haber_editor;
+
 -- Main prompt configurations table
-CREATE TABLE prompt_configs (
+CREATE TABLE IF NOT EXISTS prompt_configs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
     description TEXT,
@@ -16,10 +25,10 @@ CREATE TABLE prompt_configs (
     INDEX idx_active (is_active),
     INDEX idx_default (is_default),
     INDEX idx_name (name)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Prompt sections (gorev_tanimi, ozgunluk, etc.)
-CREATE TABLE prompt_sections (
+CREATE TABLE IF NOT EXISTS prompt_sections (
     id INT AUTO_INCREMENT PRIMARY KEY,
     config_id INT NOT NULL,
     section_key VARCHAR(100) NOT NULL,
@@ -36,10 +45,10 @@ CREATE TABLE prompt_sections (
     INDEX idx_config_section (config_id, section_key),
     INDEX idx_active (is_active),
     INDEX idx_order (display_order)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dynamic prompt rules/settings
-CREATE TABLE prompt_rules (
+CREATE TABLE IF NOT EXISTS prompt_rules (
     id INT AUTO_INCREMENT PRIMARY KEY,
     config_id INT NOT NULL,
     rule_key VARCHAR(100) NOT NULL,
@@ -59,10 +68,10 @@ CREATE TABLE prompt_rules (
     INDEX idx_category (rule_category),
     INDEX idx_active (is_active),
     INDEX idx_order (display_order)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Rule options for select/multiselect rules
-CREATE TABLE prompt_rule_options (
+CREATE TABLE IF NOT EXISTS prompt_rule_options (
     id INT AUTO_INCREMENT PRIMARY KEY,
     rule_id INT NOT NULL,
     option_key VARCHAR(100) NOT NULL,
@@ -77,10 +86,10 @@ CREATE TABLE prompt_rule_options (
     INDEX idx_rule_option (rule_id, option_key),
     INDEX idx_active (is_active),
     INDEX idx_order (display_order)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- User prompt preferences/settings
-CREATE TABLE user_prompt_settings (
+CREATE TABLE IF NOT EXISTS user_prompt_settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id VARCHAR(100) NOT NULL, -- Can be session ID or user ID
     config_id INT NOT NULL,
@@ -96,7 +105,7 @@ CREATE TABLE user_prompt_settings (
 );
 
 -- Processing history
-CREATE TABLE processing_history (
+CREATE TABLE IF NOT EXISTS processing_history (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id VARCHAR(100) NOT NULL,
     config_id INT NULL,
@@ -114,7 +123,10 @@ CREATE TABLE processing_history (
     INDEX idx_status (processing_status),
     INDEX idx_config (config_id),
     INDEX idx_created (created_at DESC)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Enable foreign key checks
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- Insert default prompt configuration
 INSERT INTO prompt_configs (name, description, is_active, is_default, version, created_by) 

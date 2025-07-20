@@ -212,7 +212,7 @@ def update_prompt_section(section_key):
         }), 500
 
 
-@bp.route('/build', methods=['POST'])
+@bp.route('/build-complete-prompt', methods=['POST'])
 def build_complete_prompt():
     """Build complete prompt with user settings"""
     try:
@@ -234,10 +234,14 @@ def build_complete_prompt():
         else:
             user_settings = prompt_service.get_user_settings(user_id, active_config['id'])
         
+        # Get news text from request if provided
+        news_text = data.get('news_text', '') if data else ''
+        
         # Build complete prompt
         complete_prompt = prompt_service.build_complete_prompt(
             active_config['id'], 
-            user_settings
+            user_settings,
+            news_text
         )
         
         if complete_prompt:

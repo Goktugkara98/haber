@@ -46,6 +46,11 @@ def create_user_profile():
         # Veritabanı bağlantısı
         db = DatabaseConnection()
         
+        # Karakter seti ayarlarını kontrol et
+        db.execute_query("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci")
+        db.execute_query("SET CHARACTER SET utf8mb4")
+        db.execute_query("SET character_set_connection = utf8mb4")
+        
         # Önce users tablosunu oluştur (eğer yoksa)
         create_users_table_query = """
         CREATE TABLE IF NOT EXISTS users (
@@ -133,6 +138,12 @@ def create_user_profile():
 
 def main():
     """Ana fonksiyon"""
+    # Windows'ta konsol çıktısı için UTF-8 desteği
+    import sys
+    import codecs
+    if sys.stdout.encoding != 'utf-8':
+        sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+    
     print("Göktuğ için kullanıcı profili oluşturuluyor...")
     
     success = create_user_profile()

@@ -146,8 +146,29 @@ const MainContentComponent = {
         }
     },
 
-    // Process news
+    // Process news - Show preview first
     processNews: async function() {
+        const newsText = this.elements.newsText.value.trim();
+        
+        if (!newsText) {
+            if (typeof Utils !== 'undefined') {
+                Utils.showNotification('Lütfen haber metni girin', 'warning');
+            }
+            return;
+        }
+
+        // Show preview modal instead of directly processing
+        if (window.PreviewModal) {
+            window.PreviewModal.show(newsText);
+        } else {
+            console.error('PreviewModal not available');
+            // Fallback: process directly if preview modal is not available
+            this.processNewsDirectly();
+        }
+    },
+    
+    // Process news directly (called from preview modal or as fallback)
+    processNewsDirectly: async function() {
         const newsText = this.elements.newsText.value.trim();
         
         if (!newsText) {
@@ -197,17 +218,44 @@ const MainContentComponent = {
 
     // Get current settings
     getCurrentSettings: function() {
-        return {
-            targetCategory: this.elements.targetCategory?.value || 'auto',
-            writingStyle: this.elements.writingStyle?.value || 'formal',
-            titleCityInfo: this.elements.titleCityInfo?.value || 'exclude',
-            nameCensorship: this.elements.nameCensorship?.value || 'initials',
-            removeCompanyInfo: this.elements.removeCompanyInfo?.checked || false,
-            removePlateInfo: this.elements.removePlateInfo?.checked || false,
-            outputFormat: this.elements.outputFormat?.value || 'json',
-            tagCount: parseInt(this.elements.tagCount?.value || 5),
-            customInstructions: this.elements.customInstructions?.value.trim() || ''
-        };
+        // Use the new PromptSettingsManager if available
+        if (window.promptSettingsManager) {
+            return window.promptSettingsManager.getCurrentSettings();
+        }
+        
+        // Fallback to manual collection for backward compatibility
+        const settings = {};
+        const settingElements = document.querySelectorAll('[data-setting]');
+        
+        settingElements.forEach(element => {
+            const settingKey = element.dataset.setting;
+            const ruleType = element.dataset.ruleType || 'text';
+            
+            let value;
+            switch (ruleType) {
+                case 'select':
+                    value = element.value;
+                    break;
+                case 'multiselect':
+                    value = Array.from(element.selectedOptions).map(option => option.value);
+                    break;
+                case 'toggle':
+                    value = element.checked;
+                    break;
+                case 'range':
+                    value = element.value;
+                    break;
+                case 'text':
+                    value = element.value;
+                    break;
+                default:
+                    value = element.value;
+            }
+            
+            settings[settingKey] = value;
+        });
+        
+        return settings;
     },
 
     // Show loading
