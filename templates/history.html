@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Geçmiş - Haber Editörü{% endblock %}
+
+{% block content %}
+<div class="history-page">
+    <div class="page-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="page-title">
+                        <i class="fas fa-history"></i>
+                        İşleme Geçmişi
+                    </h1>
+                    <p class="page-description">Tüm haber işleme geçmişinizi buradan görüntüleyebilirsiniz.</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="page-stats">
+                        <div class="stat-item">
+                            <span class="stat-number" id="total-count">0</span>
+                            <span class="stat-label">Toplam</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="completed-count">0</span>
+                            <span class="stat-label">Tamamlanan</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <!-- Filter and Search -->
+                <div class="history-controls">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="search-input" placeholder="Haber içeriğinde ara..." class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="filter-controls">
+                                <select id="status-filter" class="form-select">
+                                    <option value="">Tüm Durumlar</option>
+                                    <option value="processing">İşleniyor</option>
+                                    <option value="completed">Cevap Geldi</option>
+                                    <option value="failed">Hata</option>
+                                </select>
+                                <select id="read-filter" class="form-select">
+                                    <option value="">Tümü</option>
+                                    <option value="unread">Okunmamış</option>
+                                    <option value="read">Okunmuş</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History List -->
+                <div class="history-list-container">
+                    <div id="loading-spinner" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Yükleniyor...</span>
+                        </div>
+                        <p class="mt-2">Geçmiş yükleniyor...</p>
+                    </div>
+
+                    <div id="history-list" class="history-list" style="display: none;">
+                        <!-- History items will be loaded here -->
+                    </div>
+
+                    <div id="no-results" class="no-results text-center py-5" style="display: none;">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h4>Henüz işlenmiş haber bulunmuyor</h4>
+                        <p class="text-muted">Haber işleme özelliğini kullanarak ilk işleminizi gerçekleştirdiğinizde, burada geçmişinizi görebilirsiniz.</p>
+                        <a href="/" class="btn btn-primary mt-3">
+                            <i class="fas fa-plus-circle me-2"></i>Yeni Haber İşle
+                        </a>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div id="pagination" class="pagination-container" style="display: none;">
+                        <nav aria-label="History pagination">
+                            <ul class="pagination justify-content-center">
+                                <!-- Pagination items will be generated here -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Message Detail Modal -->
+<div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="messageModalLabel">Haber Detayı</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-content">
+                    <!-- Modal content will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="modal-meta">
+                    <span id="modal-status" class="badge"></span>
+                    <span id="modal-date" class="text-muted"></span>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline-success" id="copy-btn" style="display: none;">
+                        <i class="fas fa-copy"></i> Kopyala
+                    </button>
+                    <button type="button" class="btn btn-outline-info" id="download-btn" style="display: none;">
+                        <i class="fas fa-download"></i> İndir
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/history.css') }}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/history.js') }}"></script>
+{% endblock %}

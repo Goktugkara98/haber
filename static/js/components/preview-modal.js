@@ -1,42 +1,50 @@
 /**
- * Simple Preview Modal Component
- * Shows AI prompt preview before processing news
+ * @file preview-modal.js
+ * @description Bu dosya, haber metni işlenmeden önce kullanıcıya gönderilecek
+ * olan AI prompt'unu gösteren bir önizleme modalı bileşenini yönetir.
+ * Kullanıcı bu modal üzerinden işlemi onaylar veya iptal eder.
+ *
+ * İçindekiler:
+ * 1.0 - Bileşen Başlatma ve Olay Yönetimi
+ * 2.0 - Modal Kontrolü (Gösterme/Gizleme)
+ * 3.0 - Veri ve Ayar Yönetimi
+ * 4.0 - Prompt Oluşturma Mantığı
+ * 5.0 - İçerik Güncelleme ve Yardımcı Fonksiyonlar
  */
 
 const PreviewModal = {
-    isOpen: false,
-    
+    isOpen: false, // Modalın açık olup olmadığını belirten durum
+
+    // 1.0 - Bileşen Başlatma ve Olay Yönetimi
+
+    /**
+     * Bileşeni başlatır ve olayları bağlar.
+     */
     init() {
-        console.log('Preview Modal initialized');
         this.bindEvents();
+        console.log('Önizleme Modalı (PreviewModal) bileşeni başlatıldı.');
     },
     
+    /**
+     * Modal içindeki butonlar ve klavye kısayolları için olayları bağlar.
+     */
     bindEvents() {
-        // Confirm button
         const confirmBtn = document.getElementById('confirmProcessBtn');
         if (confirmBtn) {
             confirmBtn.addEventListener('click', () => this.confirm());
         }
         
-        // Close buttons
         const closeBtn = document.querySelector('#previewModal .btn-close');
-        const cancelBtn = document.querySelector('#previewModal .btn-outline-secondary');
-        
         if (closeBtn) {
-            closeBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.hide();
-            });
+            closeBtn.addEventListener('click', (e) => { e.preventDefault(); this.hide(); });
         }
         
+        const cancelBtn = document.querySelector('#previewModal .btn-outline-secondary');
         if (cancelBtn) {
-            cancelBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.hide();
-            });
+            cancelBtn.addEventListener('click', (e) => { e.preventDefault(); this.hide(); });
         }
         
-        // ESC key
+        // ESC tuşu ile modalı kapatma
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.isOpen) {
                 this.hide();
@@ -44,114 +52,130 @@ const PreviewModal = {
         });
     },
     
+    // 2.0 - Modal Kontrolü (Gösterme/Gizleme)
+
+    /**
+     * Önizleme modalını gösterir, prompt'u oluşturur ve içeriği günceller.
+     * @param {string} newsText - İşlenecek olan haber metni.
+     */
     async show(newsText) {
         try {
-            console.log('=== PREVIEW MODAL DEBUG ===');
-            console.log('Showing preview modal with text:', newsText.substring(0, 50) + '...');
-            
-            // Show loading state
+            console.log('Önizleme modalı gösteriliyor...');
             this.showLoading();
-            
-            // Show the modal immediately with loading state
             this.showModal();
             
+            // Backend'den tam prompt'u almayı dene
             try {
-                // Get current settings asynchronously with timeout
-                console.log('About to get current settings...');
-                const settings = await Promise.race([
-                    this.getCurrentSettings(),
-                    new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('Settings load timeout')), 5000)
-                    )
-                ]);
-                
-                console.log('=== SETTINGS RECEIVED IN PREVIEW MODAL ===');
-                console.log('Full settings object:', JSON.stringify(settings, null, 2));
-                
-                // Fetch complete prompt from backend
-                console.log('Fetching complete prompt from backend...');
+                const settings = await this.getCurrentSettings();
+                console.log('Mevcut ayarlar alındı:', settings);
+
                 const response = await fetch('/api/prompt/build-complete-prompt', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        newsText: newsText,
-                        settings: settings
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ newsText: newsText, settings: settings })
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
+                if (!response.ok) throw new Error(`API Hatası: ${response.status}`);
                 
                 const result = await response.json();
+                if (!result.success) throw new Error(result.message || 'Prompt oluşturulamadı');
                 
-                if (!result.success) {
-                    throw new Error(result.message || 'Failed to generate prompt');
-                }
-                
-                const completePrompt = result.data.completePrompt;
-                console.log('Received complete prompt from backend, length:', completePrompt.length);
-                
-                // Update modal with complete prompt
-                this.updateContent(settings, completePrompt);
-                
-                // Hide loading state
-                this.hideLoading();
-                
-                console.log('=== PREVIEW MODAL DEBUG END ===');
-                
+                console.log('Backend tarafından oluşturulan prompt başarıyla alındı.');
+                this.updateContent(settings, result.data.completePrompt);
+
             } catch (error) {
-                console.warn('Error fetching complete prompt, falling back to frontend generation:', error);
-                // Fallback to frontend generation if backend fails
-                try {
-                    const settings = await this.getCurrentSettings();
-                    const prompt = this.buildPrompt(newsText, settings);
-                    this.updateContent(settings, prompt);
-                } catch (fallbackError) {
-                    console.error('Fallback prompt generation failed:', fallbackError);
-                    throw error; // Re-throw original error
-                }
-                this.hideLoading();
+                console.warn('Backend prompt oluşturma hatası, istemci tarafında oluşturulacak:', error);
+                // Hata durumunda istemci tarafında prompt oluştur
+                const settings = await this.getCurrentSettings();
+                const prompt = this.buildDynamicPrompt(newsText, settings);
+                this.updateContent(settings, prompt);
             }
-        } catch (error) {
-            console.error('Error in PreviewModal.show:', error);
+
             this.hideLoading();
-            // Show error to user
+
+        } catch (error) {
+            console.error('Önizleme modalı gösterilirken hata oluştu:', error);
+            this.hideLoading();
             alert('Önizleme yüklenirken bir hata oluştu: ' + (error.message || 'Bilinmeyen hata'));
         }
     },
-    
-    async getCurrentSettings() {
-        try {
-            console.log('=== GETTING CURRENT SETTINGS FROM CENTRALIZED MANAGER ===');
-            
-            // First try to use the new unified settings manager
-            if (window.unifiedSettingsManager && window.unifiedSettingsManager.isReady()) {
-                const settings = window.unifiedSettingsManager.getSettings();
-                console.log('Settings from unified settings manager:', JSON.stringify(settings, null, 2));
-                return settings;
-            }
-            
-            // Fallback to legacy centralized settings manager
-            if (window.centralizedSettings && window.centralizedSettings.isReady()) {
-                const settings = window.centralizedSettings.getSettings();
-                console.log('Settings from legacy centralized manager:', JSON.stringify(settings, null, 2));
-                return settings;
-            }
-            
-            // If neither manager is ready, use defaults
-            console.warn('No settings manager ready, using defaults');
-            return this.getDefaultSettings();
-            
-        } catch (error) {
-            console.error('Error getting current settings from centralized manager:', error);
-            return this.getDefaultSettings();
+
+    /**
+     * Modal penceresini görünür hale getirir.
+     */
+    showModal() {
+        const modal = document.getElementById('previewModal');
+        if (modal) {
+            modal.style.display = 'block';
+            modal.classList.add('show');
+            this.isOpen = true;
         }
     },
+
+    /**
+     * Modal penceresini gizler.
+     */
+    hide() {
+        const modal = document.getElementById('previewModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+            this.isOpen = false;
+        }
+        console.log('Önizleme modalı kapatıldı.');
+    },
+
+    /**
+     * Modal içindeki yükleme animasyonunu gösterir.
+     */
+    showLoading() {
+        const loadingElement = document.getElementById('previewLoading');
+        if (loadingElement) loadingElement.style.display = 'block';
+    },
     
+    /**
+     * Modal içindeki yükleme animasyonunu gizler.
+     */
+    hideLoading() {
+        const loadingElement = document.getElementById('previewLoading');
+        if (loadingElement) loadingElement.style.display = 'none';
+    },
+
+    /**
+     * Kullanıcı işlemi onayladığında çalışır, modalı kapatır ve asıl işlemi tetikler.
+     */
+    confirm() {
+        console.log('Önizleme modalı onaylandı, haber işleniyor.');
+        this.hide();
+        
+        if (window.MainContentComponent && window.MainContentComponent.processNewsDirectly) {
+            window.MainContentComponent.processNewsDirectly();
+        } else {
+            console.error('Ana içerik bileşeni (MainContentComponent) bulunamadı!');
+        }
+    },
+
+    // 3.0 - Veri ve Ayar Yönetimi
+
+    /**
+     * Merkezi ayar yöneticisinden mevcut kullanıcı ayarlarını alır.
+     * @returns {Promise<Object>} - Kullanıcı ayarlarını içeren bir nesne.
+     */
+    async getCurrentSettings() {
+        console.log('Mevcut ayarlar merkezi yöneticiden alınıyor...');
+        if (window.unifiedSettingsManager && window.unifiedSettingsManager.isReady()) {
+            return window.unifiedSettingsManager.getSettings();
+        }
+        // Geriye dönük uyumluluk veya varsayılanlar
+        return window.centralizedSettings?.getSettings() || this.getDefaultSettings();
+    },
+    
+    /**
+     * Ayarlar yüklenemediğinde kullanılacak varsayılan ayarları döndürür.
+     * @returns {Object} - Varsayılan ayarlar nesnesi.
+     */
     getDefaultSettings() {
+        console.warn('Merkezi ayar yöneticisi hazır değil, varsayılan ayarlar kullanılıyor.');
         return {
             targetCategory: 'auto',
             writingStyle: 'formal',
@@ -165,464 +189,77 @@ const PreviewModal = {
         };
     },
     
-    showLoading() {
-        const loadingElement = document.getElementById('previewLoading');
-        if (loadingElement) {
-            loadingElement.style.display = 'block';
-        }
-    },
-    
-    hideLoading() {
-        const loadingElement = document.getElementById('previewLoading');
-        if (loadingElement) {
-            loadingElement.style.display = 'none';
-        }
-    },
-    
-    buildPrompt(newsText, settings) {
-        // Build dynamic, fluent prompt based on user selections
-        const prompt = this.buildDynamicPrompt(newsText, settings);
-        return prompt;
-    },
-    
+    // 4.0 - Prompt Oluşturma Mantığı
+
+    /**
+     * Verilen metin ve ayarlara göre dinamik bir AI prompt'u oluşturur.
+     * Bu fonksiyon, backend'e ulaşılamadığında bir yedek olarak kullanılır.
+     * @param {string} newsText - İşlenecek haber metni.
+     * @param {Object} settings - Kullanıcı ayarları.
+     * @returns {string} - Oluşturulan tam prompt metni.
+     */
     buildDynamicPrompt(newsText, settings) {
-        console.log('DEBUG Frontend: Building modular prompt with settings:', settings);
+        console.log('İstemci tarafında dinamik prompt oluşturuluyor. Ayarlar:', settings);
         
-        // Build each section modularly - matching backend structure
-        const taskDefinition = this.buildTaskDefinition();
-        const writingRules = this.buildWritingRules(settings);
-        const outputRequirements = this.buildOutputRequirementsModular(settings);
-        const categoryList = this.buildCategoryList(settings);
-        const outputFormat = this.buildOutputFormat(settings);
-        const customInstructions = this.buildCustomInstructions(settings);
-        const newsContent = this.buildNewsContent(newsText);
-        const finalInstruction = this.buildFinalInstruction();
-        
-        // Combine all sections
         const promptParts = [
-            taskDefinition,
-            writingRules,
-            outputRequirements,
-            categoryList,
-            outputFormat,
-            customInstructions,
-            newsContent,
-            finalInstruction
+            this.buildTaskDefinition(),
+            this.buildWritingRules(settings),
+            this.buildOutputRequirementsModular(settings),
+            this.buildCategoryList(settings),
+            this.buildOutputFormat(settings),
+            this.buildCustomInstructions(settings),
+            this.buildNewsContent(newsText),
+            this.buildFinalInstruction()
         ];
         
-        // Filter out empty parts and join
-        const prompt = promptParts.filter(part => part.trim()).join('\n\n');
-        
-        console.log('DEBUG Frontend: Generated prompt length:', prompt.length, 'characters');
+        const prompt = promptParts.filter(part => part && part.trim()).join('\n\n');
+        console.log(`İstemci tarafında oluşturulan prompt uzunluğu: ${prompt.length} karakter.`);
         return prompt;
     },
-    
-    buildTaskDefinition() {
-        return `GÖREV TANIMI:
-Sen, kurumsal bir gazetenin web sitesi için içerik üreten profesyonel bir yapay zeka editörüsün. Görevin, sana verilen orijinal haber metnini aşağıdaki kurallara göre işleyerek, belirtilen JSON formatında profesyonel ve özgün bir haber içeriği oluşturmaktır.`;
-    },
-    
-    buildWritingRules(settings) {
-        const writingStyle = settings.writingStyle || 'formal';
-        
-        let rules = 'KURALLAR:\n';
-        rules += '• ÖZGÜNLÜK: Metin tamamen yeniden yazılmalı, kopya olmamalıdır. Ancak orijinal haberdeki tüm temel bilgiler, veriler, isimler ve tarihler korunmalıdır.\n';
-        rules += `• KURUMSAL DİL: ${this.getWritingStyleRule(writingStyle)}\n`;
-        rules += '• ÇIKTININ FORMATI: Çıktı, yalnızca ve yalnızca aşağıda belirtilen JSON yapısına uygun olmalıdır. Cevabına asla açıklama veya ek metin ekleme, sadece JSON çıktısı ver.\n';
-        
-        return rules;
-    },
-    
-    buildOutputRequirementsModular(settings) {
-        let requirements = 'İSTENEN ÇIKTILAR:\n';
-        
-        // Title requirements - dynamic based on city info setting
-        requirements += this.buildTitleRequirements(settings);
-        
-        // Summary requirements
-        requirements += this.buildSummaryRequirements(settings);
-        
-        // Content requirements - dynamic based on multiple settings
-        requirements += this.buildContentRequirements(settings);
-        
-        // Category requirements - dynamic based on target category
-        requirements += this.buildCategoryRequirements(settings);
-        
-        // Tags requirements - dynamic based on tag count
-        requirements += this.buildTagsRequirements(settings);
-        
-        return requirements;
-    },
-    
-    buildTitleRequirements(settings) {
-        const titleCityInfo = settings.titleCityInfo || 'exclude';
-        
-        let titleReq = '• ETKİLİ BAŞLIK: Haberi net yansıtan, profesyonel, dikkat çekici, yanıltıcı olmayan';
-        
-        if (titleCityInfo === 'exclude') {
-            titleReq += ', şehir bilgisi içermeyen';
-            console.log('DEBUG Frontend: Title will exclude city info');
-        } else if (titleCityInfo === 'include') {
-            titleReq += ', şehir bilgisi içeren';
-            console.log('DEBUG Frontend: Title will include city info');
-        } else {
-            console.log('DEBUG Frontend: Title city info setting is auto/default');
-        }
-        
-        titleReq += ' bir başlık.\n';
-        return titleReq;
-    },
-    
-    buildSummaryRequirements(settings) {
-        return '• HABER ÖZETİ: Haberin en önemli noktalarını içeren, 2-3 cümlelik, şehir bilgisi içeren kısa bir özet.\n';
-    },
-    
-    buildContentRequirements(settings) {
-        let contentReq = '• ÖZGÜN HABER METNİ: Tüm bilgileri koruyarak, metni özgün cümlelerle baştan yaz';
-        
-        // Name censorship rule - modular
-        // Get the actual setting value, default to 'none' if not set
-        const nameCensorship = settings.nameCensorship !== undefined ? settings.nameCensorship : 'none';
-        console.log('DEBUG: Building content requirements with nameCensorship:', nameCensorship);
-        
-        // Only add name censorship text if it's not 'none'
-        if (nameCensorship !== 'none') {
-            const nameCensorshipText = this.getNameCensorshipText(nameCensorship);
-            if (nameCensorshipText) {
-                contentReq += `. ${nameCensorshipText}`;
-                console.log('DEBUG: Applied name censorship rule:', nameCensorshipText);
-            }
-        }
-        
-        // Company info removal - modular
-        const removeCompanyInfo = settings.removeCompanyInfo;
-        if (removeCompanyInfo) {
-            contentReq += '. Özel şirket bilgilerini metinden çıkar';
-            console.log('DEBUG Frontend: Company info removal enabled');
-        }
-        
-        // Plate info removal - modular
-        const removePlateInfo = settings.removePlateInfo;
-        if (removePlateInfo) {
-            contentReq += '. Plaka bilgilerini metinden çıkar';
-            console.log('DEBUG Frontend: Plate info removal enabled');
-        }
-        
-        contentReq += '.\n';
-        return contentReq;
-    },
-    
-    buildCategoryRequirements(settings) {
-        const targetCategory = settings.targetCategory;
-        console.log('DEBUG Frontend: targetCategory from settings:', targetCategory);
-        
-        if (targetCategory && targetCategory !== 'auto' && targetCategory.trim()) {
-            // User has selected a specific category
-            const categoryDisplayName = this.getCategoryDisplayName(targetCategory);
-            const categoryReq = `• MUHTEMEL KATEGORİ: Mümkünse "${categoryDisplayName}" kategorisini tercih et, uygun değilse en uygun kategoriyi seç.\n`;
-            console.log('DEBUG Frontend: Using specific category preference:', categoryDisplayName);
-            return categoryReq;
-        } else {
-            // User wants automatic category selection
-            console.log('DEBUG Frontend: Using automatic category selection');
-            return '• MUHTEMEL KATEGORİ: Verilen kategori listesinden en uygun olanı seç.\n';
-        }
-    },
-    
-    buildTagsRequirements(settings) {
-        const tagCount = settings.tagCount || 5;
-        console.log('DEBUG Frontend: Tag count setting:', tagCount);
-        
-        return `• ETİKETLER: Haberle ilgili, SEO uyumlu ${tagCount} adet etiket oluştur ve bunları bir dizi (array) olarak listele.\n`;
-    },
-    
-    buildCategoryList(settings) {
-        const fullCategories = ["Asayiş", "Gündem", "Ekonomi", "Siyaset", "Spor", "Teknoloji", "Sağlık", "Yaşam", "Eğitim", "Dünya", "Kültür & Sanat", "Magazin", "Genel"];
-        
-        if (settings) {
-            const targetCategory = settings.targetCategory;
-            if (targetCategory && targetCategory !== 'auto' && targetCategory.trim()) {
-                // User has selected a specific category - highlight it in the list
-                const categoryName = this.getCategoryDisplayName(targetCategory);
-                if (fullCategories.includes(categoryName)) {
-                    console.log('DEBUG Frontend: Highlighting selected category in list:', categoryName);
-                    return `KATEGORİ LİSTESİ (SEÇİLİ: ${categoryName}):
-${JSON.stringify(fullCategories)}
 
-ÖNEM: Yukarıdaki listeden "${categoryName}" kategorisi tercih edilmektedir.`;
-                }
-            }
-        }
-        
-        // Default: show full list without preference
-        console.log('DEBUG Frontend: Showing full category list without preference');
-        return `KATEGORİ LİSTESİ:
-${JSON.stringify(fullCategories)}`;
-    },
-    
-    buildOutputFormat(settings) {
-        const outputFormat = settings.outputFormat || 'json';
-        console.log('DEBUG Frontend: Output format setting:', outputFormat);
-        
-        if (outputFormat === 'json') {
-            console.log('DEBUG Frontend: Using JSON output format');
-            return `[ÇIKTI FORMATI: JSON]
-Çıktı formatı JSON olarak ayarlanmıştır. Aşağıdaki yapıya uygun olarak çıktı ver:
-{
-  "baslik": "",
-  "ozet": "",
-  "haber_metni": "",
-  "kategori": "",
-  "etiketler": []
-}`;
-        } else if (outputFormat === 'xml') {
-            console.log('DEBUG Frontend: Using XML output format');
-            return `[ÇIKTI FORMATI: XML]
-Çıktı formatı XML olarak ayarlanmıştır. Aşağıdaki yapıya uygun olarak çıktı ver:
-<haber>
-  <baslik></baslik>
-  <ozet></ozet>
-  <haber_metni></haber_metni>
-  <kategori></kategori>
-  <etiketler></etiketler>
-</haber>`;
-        } else if (outputFormat === 'plain') {
-            console.log('DEBUG Frontend: Using PLAIN TEXT output format');
-            return `[ÇIKTI FORMATI: DÜZ METİN]
-Çıktı formatı düz metin olarak ayarlanmıştır. Aşağıdaki yapıya uygun olarak çıktı ver:
-BAŞLIK: [başlık]
-ÖZET: [özet]
-HABER METNİ: [haber metni]
-KATEGORİ: [kategori]
-ETİKETLER: [etiketler]`;
-        } else {
-            console.log('DEBUG Frontend: Unknown output format', outputFormat, ', using default JSON');
-            return `[VARSAYILAN ÇIKTI FORMATI: JSON]
-Çıktı formatı JSON olarak ayarlanmıştır. Aşağıdaki yapıya uygun olarak çıktı ver:
-{
-  "baslik": "",
-  "ozet": "",
-  "haber_metni": "",
-  "kategori": "",
-  "etiketler": []
-}`;
-        }
-    },
-    
-    buildCustomInstructions(settings) {
-        const customInstructions = (settings.customInstructions || '').trim();
-        
-        if (customInstructions) {
-            console.log('DEBUG Frontend: Custom instructions provided:', customInstructions.length, 'characters');
-            return `ÖZEL TALİMATLAR:
-${customInstructions}`;
-        }
-        
-        return '';
-    },
-    
-    buildNewsContent(newsText) {
-        if (newsText && newsText.trim()) {
-            console.log('DEBUG Frontend: News text provided:', newsText.length, 'characters');
-            return `ORİJİNAL HABER METNİ:
-${newsText}`;
-        }
-        
-        return '';
-    },
-    
-    buildFinalInstruction() {
-        return 'Yukarıdaki kurallara göre bu haber metnini işle ve sadece JSON formatında çıktı ver:';
-    },
-    
-    getSettingLabel(key) {
-        const labels = {
-            targetCategory: 'Hedef Kategori',
-            writingStyle: 'Yazım Stili',
-            titleCityInfo: 'Başlıkta Şehir',
-            nameCensorship: 'İsim Sansürleme',
-            removeCompanyInfo: 'Şirket Bilgisi',
-            removePlateInfo: 'Plaka Bilgisi',
-            outputFormat: 'Çıktı Formatı',
-            tagCount: 'Etiket Sayısı',
-            customInstructions: 'Özel Talimatlar'
-        };
-        return labels[key] || key;
-    },
-    
-    getNameCensorshipRule(nameCensorship) {
-        switch (nameCensorship) {
-            case 'full':
-                return 'İsimleri tamamen sansürle (örn: A.B.)';
-            case 'partial':
-                return 'İsimleri kısmi sansürle (örn: Ahmet K.)';
-            case 'none':
-                return 'İsimleri sansürleme';
-            default:
-                return 'İsimleri sansürle (örn: A.B.)';
-        }
-    },
-    
-    getWritingStyleRule(writingStyle) {
-        console.log('DEBUG Frontend: Writing style setting:', writingStyle);
-        
-        switch (writingStyle) {
-            case 'formal':
-                console.log('DEBUG Frontend: Using FORMAL writing style');
-                return '[FORMAL YAZIM STİLİ] Kullanılacak dil resmi, profesyonel ve bilgilendirici olmalıdır. Argo veya clickbait ifadelerden kaçınılmalıdır.';
-            case 'informal':
-                console.log('DEBUG Frontend: Using INFORMAL writing style');
-                return '[SAMIMİ YAZIM STİLİ] Kullanılacak dil samimi, sıcak ve anlaşılır olmalıdır. Okuyucuyla yakın bir bağ kurmalı, ancak yine de profesyonel kalmalıdır.';
-            case 'neutral':
-                console.log('DEBUG Frontend: Using NEUTRAL writing style');
-                return '[NÖTR YAZIM STİLİ] Kullanılacak dil tamamen nötr, objektif ve duygusal yüklenmeden uzak bilgilendirici olmalıdır. Sadece gerçekleri aktarmalıdır.';
-            default:
-                console.log('DEBUG Frontend: Unknown writing style', writingStyle, ', using default FORMAL');
-                return '[VARSAYILAN FORMAL YAZIM STİLİ] Kullanılacak dil resmi, profesyonel ve bilgilendirici olmalıdır. Argo veya clickbait ifadelerden kaçınılmalıdır.';
-        }
-    },
-    
-    buildOutputRequirements(settings) {
-        let requirements = 'İSTENEN ÇIKTILAR:\n';
-        
-        // Title requirements
-        let titleReq = '• ETKİLİ BAŞLIK: Haberi net yansıtan, profesyonel, dikkat çekici, yanıltıcı olmayan';
-        if (settings.titleCityInfo === 'exclude') {
-            titleReq += ', şehir bilgisi içermeyen';
-        } else if (settings.titleCityInfo === 'include') {
-            titleReq += ', şehir bilgisi içeren';
-        }
-        titleReq += ' bir başlık.\n';
-        requirements += titleReq;
-        
-        // Summary requirements
-        requirements += '• HABER ÖZETİ: Haberin en önemli noktalarını içeren, 2-3 cümlelik, şehir bilgisi içeren kısa bir özet.\n';
-        
-        // Content requirements
-        let contentReq = '• ÖZGÜN HABER METNİ: Tüm bilgileri koruyarak, metni özgün cümlelerle baştan yaz';
-        
-        // Add name censorship rule
-        const nameCensorshipText = this.getNameCensorshipText(settings.nameCensorship);
-        if (nameCensorshipText) {
-            contentReq += '. ' + nameCensorshipText;
-        }
-        
-        // Add company info rule
-        if (settings.removeCompanyInfo) {
-            contentReq += '. Özel şirket bilgilerini metinden çıkar';
-        }
-        
-        // Add plate info rule
-        if (settings.removePlateInfo) {
-            contentReq += '. Plaka bilgilerini metinden çıkar';
-        }
-        
-        contentReq += '.\n';
-        requirements += contentReq;
-        
-        // Category requirements - modular and precise
-        console.log('DEBUG Frontend: targetCategory from settings:', settings.targetCategory);
-        
-        if (settings.targetCategory && settings.targetCategory !== 'auto' && settings.targetCategory.trim()) {
-            // User has selected a specific category
-            const categoryDisplayName = this.getCategoryDisplayName(settings.targetCategory);
-            requirements += `• MUHTEMEL KATEGORİ: Mümkünse "${categoryDisplayName}" kategorisini tercih et, uygun değilse en uygun kategoriyi seç.\n`;
-            console.log('DEBUG Frontend: Using specific category preference:', categoryDisplayName);
-        } else {
-            // User wants automatic category selection
-            requirements += '• MUHTEMEL KATEGORİ: Verilen kategori listesinden en uygun olanı seç.\n';
-            console.log('DEBUG Frontend: Using automatic category selection');
-        }
-        
-        // Tags requirements
-        const tagCount = settings.tagCount || 5;
-        requirements += `• ETİKETLER: Haberle ilgili, SEO uyumlu ${tagCount} adet etiket oluştur ve bunları bir dizi (array) olarak listele.\n`;
-        
-        return requirements;
-    },
-    
-    getNameCensorshipText(nameCensorship) {
-        console.log('DEBUG: Getting name censorship text for:', nameCensorship);
-        
-        // Ensure we have a valid value
-        if (!nameCensorship) {
-            console.warn('No nameCensorship value provided, defaulting to none');
-            return '';
-        }
-        
-        // Convert to string in case it's a number or something else
-        const censorship = String(nameCensorship).toLowerCase().trim();
-        
-        switch (censorship) {
-            case 'full':
-                return 'İsimleri tamamen sansürle (örn: A.B.)';
-            case 'partial':
-                return 'İsimleri kısmi sansürle (örn: Ahmet K.)';
-            case 'initials':
-                return 'Sadece baş harfleri kullan (örn: A.K.)';
-            case 'none':
-                return 'İsimleri olduğu gibi göster';
-            default:
-                console.warn('Unknown nameCensorship value:', nameCensorship, 'defaulting to none');
-                return 'İsimleri olduğu gibi göster';
-        }
-    },
-    
-    getCategoryDisplayName(category) {
-        const categoryMap = {
-            'asayis': 'Asayiş',
-            'gundem': 'Gündem',
-            'ekonomi': 'Ekonomi',
-            'siyaset': 'Siyaset',
-            'spor': 'Spor',
-            'teknoloji': 'Teknoloji',
-            'saglik': 'Sağlık',
-            'yasam': 'Yaşam',
-            'egitim': 'Eğitim',
-            'dunya': 'Dünya',
-            'kultur': 'Kültür & Sanat',
-            'magazin': 'Magazin',
-            'genel': 'Genel'
-        };
-        return categoryMap[category] || category;
-    },
-    
+    buildTaskDefinition: () => `GÖREV TANIMI:\nSen, profesyonel bir yapay zeka editörüsün. Görevin, verilen orijinal metni aşağıdaki kurallara göre işleyerek, belirtilen formatta özgün bir haber içeriği oluşturmaktır.`,
+    buildWritingRules: (settings) => `KURALLAR:\n• ÖZGÜNLÜK: Metin tamamen yeniden yazılmalı, ancak tüm temel bilgiler korunmalıdır.\n• DİL: ${settings.writingStyle || 'formal'} bir dil kullanılmalıdır.\n• FORMAT: Çıktı sadece istenen formatta (örn: JSON) olmalıdır.`,
+    buildOutputRequirementsModular: (settings) => `İSTENEN ÇIKTILAR:\n• BAŞLIK: Etkili ve dikkat çekici bir başlık (${settings.titleCityInfo === 'include' ? 'şehir bilgisi içermeli' : 'şehir bilgisi içermemeli'}).\n• ÖZET: 2-3 cümlelik kısa bir özet.\n• HABER METNİ: Özgünleştirilmiş tam metin. İsimler "${settings.nameCensorship || 'partial'}" kuralına göre sansürlenmelidir.`,
+    buildCategoryList: (settings) => `KATEGORİ LİSTESİ:\n["Asayiş", "Gündem", "Ekonomi", "Spor", "Teknoloji", "Sağlık", "Yaşam"]\n${settings.targetCategory !== 'auto' ? `(Öncelikli kategori: ${settings.targetCategory})` : ''}`,
+    buildOutputFormat: (settings) => `ÇIKTI FORMATI (${settings.outputFormat || 'json'}):\n{ "baslik": "", "ozet": "", "haber_metni": "", "kategori": "", "etiketler": [] }`,
+    buildCustomInstructions: (settings) => (settings.customInstructions || '').trim() ? `ÖZEL TALİMATLAR:\n${settings.customInstructions}` : '',
+    buildNewsContent: (newsText) => `ORİJİNAL HABER METNİ:\n${newsText}`,
+    buildFinalInstruction: () => `Yukarıdaki kurallara göre bu metni işle ve sadece istenen formatta çıktı ver.`,
+
+    // 5.0 - İçerik Güncelleme ve Yardımcı Fonksiyonlar
+
+    /**
+     * Modalın içeriğini oluşturulan prompt ile günceller.
+     * @param {Object} settings - Kullanılan ayarlar.
+     * @param {string} prompt - Gösterilecek prompt metni.
+     */
     updateContent(settings, prompt) {
-        console.log('Updating preview content with prompt');
-        
-        // Update prompt display
         const promptContainer = document.querySelector('#promptDisplay');
-        if (promptContainer) {
-            try {
-                // Format the prompt with syntax highlighting
-                promptContainer.innerHTML = `
-                    <div class="prompt-content-inner">
-                        <pre><code class="language-python">${this.escapeHtml(prompt)}</code></pre>
-                    </div>
-                `;
-                
-                // Apply syntax highlighting if Prism is available
-                const codeElement = promptContainer.querySelector('code');
-                if (window.Prism && codeElement) {
-                    Prism.highlightElement(codeElement);
-                }
-                
-                console.log('Prompt display updated successfully');
-            } catch (error) {
-                console.error('Error updating prompt display:', error);
-                promptContainer.innerHTML = `
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Prompt gösterilirken bir hata oluştu.
-                    </div>
-                `;
+        if (!promptContainer) {
+            console.error('Prompt gösterim alanı (#promptDisplay) bulunamadı.');
+            return;
+        }
+        
+        try {
+            // Güvenlik için metni escape et ve <pre><code> içinde göster
+            promptContainer.innerHTML = `<pre><code class="language-text">${this.escapeHtml(prompt)}</code></pre>`;
+            
+            // Prism.js varsa sözdizimi renklendirmesi uygula
+            if (window.Prism) {
+                Prism.highlightElement(promptContainer.querySelector('code'));
             }
-        } else {
-            console.error('Prompt container not found');
+            console.log('Modal içeriği prompt ile güncellendi.');
+        } catch (error) {
+            console.error('Prompt gösterimi güncellenirken hata:', error);
+            promptContainer.innerHTML = `<div class="alert alert-warning">Prompt gösterilirken bir hata oluştu.</div>`;
         }
     },
     
-    // Helper to escape HTML for safe display
+    /**
+     * HTML içinde güvenli bir şekilde metin göstermek için özel karakterleri dönüştürür.
+     * @param {string} unsafe - Dönüştürülecek metin.
+     * @returns {string} - Güvenli hale getirilmiş HTML metni.
+     */
     escapeHtml(unsafe) {
         return unsafe
             .replace(/&/g, '&amp;')
@@ -630,81 +267,13 @@ ${newsText}`;
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
-    },
-    
-    showModal() {
-        const modal = document.getElementById('previewModal');
-        if (modal) {
-            modal.style.display = 'block';
-            modal.classList.add('show');
-            modal.setAttribute('aria-hidden', 'false');
-            
-            // No backdrop - keep screen bright
-            
-            this.isOpen = true;
-        }
-    },
-    
-    createBackdrop() {
-        // Remove existing backdrop
-        this.removeBackdrop();
-        
-        // Create very light backdrop that doesn't darken screen
-        const backdrop = document.createElement('div');
-        backdrop.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.1);
-            z-index: 1040;
-            pointer-events: auto;
-        `;
-        backdrop.addEventListener('click', () => this.hide());
-        
-        document.body.appendChild(backdrop);
-        this.backdrop = backdrop;
-    },
-    
-    removeBackdrop() {
-        if (this.backdrop) {
-            this.backdrop.remove();
-            this.backdrop = null;
-        }
-    },
-    
-    hide() {
-        const modal = document.getElementById('previewModal');
-        if (modal) {
-            modal.style.display = 'none';
-            modal.classList.remove('show');
-            modal.setAttribute('aria-hidden', 'true');
-        }
-        
-        this.removeBackdrop();
-        this.isOpen = false;
-        
-        console.log('Preview modal hidden');
-    },
-    
-    confirm() {
-        console.log('Preview modal confirmed');
-        this.hide();
-        
-        // Trigger actual processing
-        if (window.MainContentComponent && window.MainContentComponent.processNewsDirectly) {
-            window.MainContentComponent.processNewsDirectly();
-        } else {
-            console.error('MainContentComponent not found');
-        }
     }
 };
 
-// Make available globally
+// Bileşeni global `window` nesnesine ekle
 window.PreviewModal = PreviewModal;
 
-// Initialize when DOM is ready
+// DOM yüklendiğinde bileşeni başlat
 document.addEventListener('DOMContentLoaded', function() {
     PreviewModal.init();
 });

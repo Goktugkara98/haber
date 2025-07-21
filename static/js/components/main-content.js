@@ -1,26 +1,46 @@
-// Main Content Component JavaScript
+/**
+ * @file main-content.js
+ * @description Bu dosya, uygulamanın ana içerik alanını yönetir. Metin girişi,
+ * ayarların yönetimi, AI ile işleme sürecinin tetiklenmesi ve sonuçların
+ * gösterilmesi gibi temel işlevleri içerir.
+ *
+ * İçindekiler:
+ * 1.0 - Bileşen Başlatma ve Olay Yönetimi
+ * 2.0 - Metin Girişi ve Doğrulama
+ * 3.0 - Ayarlar Yönetimi (Kaydetme/Yükleme)
+ * 4.0 - Haber İşleme Süreci
+ * 5.0 - Sonuçların Gösterimi ve Yönetimi
+ * 6.0 - Geçmiş Yönetimi ve Yardımcı Fonksiyonlar
+ */
 
 const MainContentComponent = {
-    elements: {},
-    settings: {},
-    
-    // Initialize the component
+    elements: {}, // DOM elementleri için cache nesnesi
+    settings: {}, // Ayarlar için cache nesnesi
+
+    // 1.0 - Bileşen Başlatma ve Olay Yönetimi
+
+    /**
+     * Bileşeni başlatır, olayları bağlar ve ayarları yükler.
+     */
     init: function() {
         this.cacheElements();
         this.bindEvents();
         this.loadSettings();
         this.updateCharacterCount();
-        console.log('Main Content Component initialized');
+        console.log('Ana İçerik (MainContentComponent) bileşeni başlatıldı.');
     },
 
-    // Cache DOM elements
+    /**
+     * Gerekli DOM elementlerini seçer ve `elements` nesnesinde saklar.
+     */
     cacheElements: function() {
         this.elements = {
+            // Ana elementler
             newsText: document.getElementById('newsText'),
             charCount: document.getElementById('charCount'),
             processBtn: document.getElementById('processBtn'),
             
-            // Settings elements
+            // Ayar elementleri
             targetCategory: document.getElementById('targetCategory'),
             writingStyle: document.getElementById('writingStyle'),
             titleCityInfo: document.getElementById('titleCityInfo'),
@@ -31,34 +51,36 @@ const MainContentComponent = {
             tagCount: document.getElementById('tagCount'),
             customInstructions: document.getElementById('customInstructions'),
             
-            // Result elements
+            // Sonuç ve yükleme alanları
             resultSection: document.getElementById('resultSection'),
             processedContent: document.getElementById('processedContent'),
             loadingSection: document.getElementById('loadingSection')
         };
     },
 
-    // Bind events
+    /**
+     * Gerekli olay dinleyicilerini (event listeners) bağlar.
+     */
     bindEvents: function() {
-        // Text input events
         if (this.elements.newsText) {
             this.elements.newsText.addEventListener('input', this.handleTextInput.bind(this));
             this.elements.newsText.addEventListener('paste', this.handleTextPaste.bind(this));
         }
 
-        // Process button
         if (this.elements.processBtn) {
             this.elements.processBtn.addEventListener('click', this.processNews.bind(this));
         }
 
-        // Auto-save settings on change
+        // Ayar değişikliklerini otomatik kaydetmek için olayları bağla
         this.bindSettingsEvents();
 
-        // Keyboard shortcuts
+        // Klavye kısayollarını bağla
         document.addEventListener('keydown', this.handleKeyboardShortcuts.bind(this));
     },
 
-    // Bind settings events for auto-save
+    /**
+     * Ayar elementlerindeki değişiklikleri dinleyerek ayarları otomatik kaydeder.
+     */
     bindSettingsEvents: function() {
         const settingsElements = [
             'targetCategory', 'writingStyle', 'titleCityInfo', 'nameCensorship',
@@ -74,35 +96,43 @@ const MainContentComponent = {
         });
     },
 
-    // Handle text input
+    // 2.0 - Metin Girişi ve Doğrulama
+
+    /**
+     * Metin alanına her veri girişinde tetiklenir.
+     */
     handleTextInput: function(e) {
         this.updateCharacterCount();
-        this.updateProcessButton();
+        this.updateProcessButtonState();
         
-        // Auto-save text
+        // Metni otomatik kaydetmek için debounced fonksiyonu çağır
         this.debouncedSaveText = this.debouncedSaveText || Utils.debounce(() => {
             this.saveText();
         }, 1000);
         this.debouncedSaveText();
     },
 
-    // Handle text paste
+    /**
+     * Metin alanına yapıştırma işlemi yapıldığında tetiklenir.
+     */
     handleTextPaste: function(e) {
+        // Yapıştırma işlemi DOM'a yansıdıktan sonra güncelleme yap
         setTimeout(() => {
             this.updateCharacterCount();
-            this.updateProcessButton();
+            this.updateProcessButtonState();
         }, 10);
     },
 
-    // Update character count
+    /**
+     * Karakter sayacını günceller ve limitlere göre renklendirir.
+     */
     updateCharacterCount: function() {
         if (!this.elements.newsText || !this.elements.charCount) return;
         
         const length = this.elements.newsText.value.length;
         this.elements.charCount.textContent = length.toLocaleString();
         
-        // Update styling based on length
-        const maxLength = 10000;
+        const maxLength = 10000; // Örnek bir maksimum karakter limiti
         const percentage = (length / maxLength) * 100;
         
         if (percentage >= 90) {
@@ -114,8 +144,10 @@ const MainContentComponent = {
         }
     },
 
-    // Update process button state
-    updateProcessButton: function() {
+    /**
+     * Metin uzunluğuna göre "İşle" butonunun aktif/pasif durumunu günceller.
+     */
+    updateProcessButtonState: function() {
         if (!this.elements.newsText || !this.elements.processBtn) return;
         
         const text = this.elements.newsText.value.trim();
@@ -124,11 +156,11 @@ const MainContentComponent = {
         this.elements.processBtn.disabled = !isValid;
     },
 
-
-
-    // Handle keyboard shortcuts
+    /**
+     * Klavye kısayollarını yönetir (Ctrl+Enter, Ctrl+S).
+     */
     handleKeyboardShortcuts: function(e) {
-        // Ctrl+Enter to process
+        // Ctrl+Enter ile haberi işle
         if (e.ctrlKey && e.key === 'Enter') {
             e.preventDefault();
             if (!this.elements.processBtn.disabled) {
@@ -136,160 +168,171 @@ const MainContentComponent = {
             }
         }
         
-        // Ctrl+S to save
+        // Ctrl+S ile tüm ayarları kaydet
         if (e.ctrlKey && e.key === 's') {
             e.preventDefault();
             this.saveAll();
             if (typeof Utils !== 'undefined') {
-                Utils.showNotification('Ayarlar kaydedildi', 'success', 2000);
+                Utils.showNotification('Ayarlar başarıyla kaydedildi.', 'success', 2000);
             }
         }
     },
 
-    // Process news - Show preview first
-    processNews: async function() {
-        const newsText = this.elements.newsText.value.trim();
-        
-        if (!newsText) {
-            if (typeof Utils !== 'undefined') {
-                Utils.showNotification('Lütfen haber metni girin', 'warning');
-            }
-            return;
-        }
+    // 3.0 - Ayarlar Yönetimi (Kaydetme/Yükleme)
 
-        // Show preview modal instead of directly processing
-        if (window.PreviewModal) {
-            window.PreviewModal.show(newsText);
-        } else {
-            console.error('PreviewModal not available');
-            // Fallback: process directly if preview modal is not available
-            this.processNewsDirectly();
-        }
-    },
-    
-    // Process news directly (called from preview modal or as fallback)
-    processNewsDirectly: async function() {
-        const newsText = this.elements.newsText.value.trim();
+    /**
+     * Mevcut ayarları yerel depolamaya (local storage) kaydeder.
+     */
+    saveSettings: function() {
+        if (typeof Utils === 'undefined') return;
         
-        if (!newsText) {
-            if (typeof Utils !== 'undefined') {
-                Utils.showNotification('Lütfen haber metni girin', 'warning');
-            }
-            return;
-        }
-
-        // Get current settings
         const settings = this.getCurrentSettings();
-        
-        // Show loading
-        this.showLoading();
-        this.hideResults();
-
-        try {
-            // Prepare request data
-            const requestData = {
-                news_text: newsText,
-                settings: settings,
-                timestamp: new Date().toISOString()
-            };
-
-            // Make API request
-            const response = await Utils.apiRequest('/api/process-news', {
-                method: 'POST',
-                body: JSON.stringify(requestData)
-            });
-
-            // Hide loading and show results
-            this.hideLoading();
-            this.showResults(response);
-
-            // Save to history
-            this.saveToHistory(requestData, response);
-
-        } catch (error) {
-            console.error('Processing error:', error);
-            this.hideLoading();
-            
-            if (typeof Utils !== 'undefined') {
-                Utils.showNotification('İşlem sırasında hata oluştu', 'danger');
-            }
-        }
+        Utils.storage.set('promptSettings', settings);
+        console.log('Ayarlar yerel depolamaya kaydedildi.');
     },
 
-    // Get current settings
+    /**
+     * Kaydedilmiş ayarları yerel depolamadan yükler ve form elemanlarına uygular.
+     */
+    loadSettings: function() {
+        if (typeof Utils === 'undefined') return;
+        
+        const savedSettings = Utils.storage.get('promptSettings');
+        if (!savedSettings) return;
+
+        Object.keys(savedSettings).forEach(key => {
+            const element = this.elements[key];
+            if (!element) return;
+
+            if (element.type === 'checkbox') {
+                element.checked = savedSettings[key];
+            } else {
+                element.value = savedSettings[key];
+            }
+        });
+        console.log('Kaydedilmiş ayarlar yüklendi.');
+    },
+
+    /**
+     * Formdaki tüm ayar elemanlarından mevcut değerleri toplar.
+     * @returns {Object} - Mevcut ayarların bir nesnesi.
+     */
     getCurrentSettings: function() {
-        // Use the new PromptSettingsManager if available
+        // Yeni merkezi ayar yöneticisi varsa onu kullan
         if (window.promptSettingsManager) {
             return window.promptSettingsManager.getCurrentSettings();
         }
         
-        // Fallback to manual collection for backward compatibility
+        // Geriye dönük uyumluluk için manuel toplama
         const settings = {};
         const settingElements = document.querySelectorAll('[data-setting]');
         
         settingElements.forEach(element => {
             const settingKey = element.dataset.setting;
-            const ruleType = element.dataset.ruleType || 'text';
-            
-            let value;
-            switch (ruleType) {
-                case 'select':
-                    value = element.value;
-                    break;
-                case 'multiselect':
-                    value = Array.from(element.selectedOptions).map(option => option.value);
-                    break;
-                case 'toggle':
-                    value = element.checked;
-                    break;
-                case 'range':
-                    value = element.value;
-                    break;
-                case 'text':
-                    value = element.value;
-                    break;
-                default:
-                    value = element.value;
-            }
-            
+            const value = element.type === 'checkbox' ? element.checked : element.value;
             settings[settingKey] = value;
         });
         
         return settings;
     },
 
-    // Show loading
+    // 4.0 - Haber İşleme Süreci
+
+    /**
+     * Haber işleme sürecini başlatır. Önce önizleme modalını gösterir.
+     */
+    processNews: async function() {
+        const newsText = this.elements.newsText.value.trim();
+        
+        if (!newsText) {
+            Utils.showNotification('Lütfen işlenecek bir haber metni girin.', 'warning');
+            return;
+        }
+
+        // Doğrudan işlemek yerine önizleme modalını göster
+        if (window.PreviewModal) {
+            window.PreviewModal.show(newsText);
+        } else {
+            console.error('Önizleme Modalı (PreviewModal) bulunamadı. Doğrudan işleniyor.');
+            this.processNewsDirectly(); // Modal yoksa doğrudan işle
+        }
+    },
+    
+    /**
+     * Haberi doğrudan API'ye göndererek işler (önizleme modalından sonra çağrılır).
+     */
+    processNewsDirectly: async function() {
+        const newsText = this.elements.newsText.value.trim();
+        if (!newsText) {
+            Utils.showNotification('Lütfen işlenecek bir haber metni girin.', 'warning');
+            return;
+        }
+
+        const settings = this.getCurrentSettings();
+        
+        this.showLoading();
+        this.hideResults();
+
+        try {
+            const requestData = {
+                news_text: newsText,
+                settings: settings,
+                timestamp: new Date().toISOString()
+            };
+
+            console.log('Haber işleme API isteği gönderiliyor:', requestData);
+            const response = await Utils.apiRequest('/api/process-news', {
+                method: 'POST',
+                body: JSON.stringify(requestData)
+            });
+
+            this.hideLoading();
+            this.showResults(response);
+            this.saveToHistory(requestData, response);
+
+        } catch (error) {
+            console.error('Haber işleme sırasında bir hata oluştu:', error);
+            this.hideLoading();
+            Utils.showNotification('İşlem sırasında bir hata oluştu. Lütfen tekrar deneyin.', 'danger');
+        }
+    },
+
+    // 5.0 - Sonuçların Gösterimi ve Yönetimi
+
+    /**
+     * Yükleme animasyonunu gösterir.
+     */
     showLoading: function() {
         if (this.elements.loadingSection) {
             this.elements.loadingSection.style.display = 'block';
         }
     },
 
-    // Hide loading
+    /**
+     * Yükleme animasyonunu gizler.
+     */
     hideLoading: function() {
         if (this.elements.loadingSection) {
             this.elements.loadingSection.style.display = 'none';
         }
     },
 
-    // Show results
+    /**
+     * İşlenmiş sonuçları ekranda gösterir.
+     * @param {Object} data - API'den dönen sonuç verisi.
+     */
     showResults: function(data) {
         if (!this.elements.resultSection || !this.elements.processedContent) return;
 
-        // Format the result based on output format
         const settings = this.getCurrentSettings();
-        let formattedContent = '';
-
-        if (settings.outputFormat === 'json' && data.result) {
-            formattedContent = this.formatJSONResult(data.result);
-        } else {
-            formattedContent = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-        }
+        const formattedContent = (settings.outputFormat === 'json' && data.result)
+            ? this.formatJSONResult(data.result)
+            : `<pre>${JSON.stringify(data, null, 2)}</pre>`;
 
         this.elements.processedContent.innerHTML = formattedContent;
         this.elements.resultSection.style.display = 'block';
 
-        // Scroll to results
+        // Sonuçlar alanına yumuşak bir şekilde kaydır
         setTimeout(() => {
             this.elements.resultSection.scrollIntoView({ 
                 behavior: 'smooth',
@@ -298,76 +341,39 @@ const MainContentComponent = {
         }, 100);
     },
 
-    // Format JSON result for display
+    /**
+     * JSON formatındaki sonucu daha okunaklı bir HTML'e dönüştürür.
+     * @param {Object} result - İşlenmiş sonuç nesnesi.
+     * @returns {string} - Oluşturulan HTML içeriği.
+     */
     formatJSONResult: function(result) {
-        if (!result) return '<p>Sonuç bulunamadı</p>';
+        if (!result) return '<p>Geçerli bir sonuç bulunamadı.</p>';
 
         return `
             <div class="json-result">
-                <div class="result-item">
-                    <h6>Başlık:</h6>
-                    <p>${result.baslik || 'Belirtilmemiş'}</p>
-                </div>
-                <div class="result-item">
-                    <h6>Özet:</h6>
-                    <p>${result.ozet || 'Belirtilmemiş'}</p>
-                </div>
-                <div class="result-item">
-                    <h6>Haber Metni:</h6>
-                    <div class="news-content">${result.haber_metni || 'Belirtilmemiş'}</div>
-                </div>
-                <div class="result-item">
-                    <h6>Kategori:</h6>
-                    <span class="category-badge">${result.kategori || 'Belirtilmemiş'}</span>
-                </div>
-                <div class="result-item">
-                    <h6>Etiketler:</h6>
-                    <div class="tags">
-                        ${result.etiketler ? result.etiketler.map(tag => `<span class="tag">${tag}</span>`).join('') : 'Belirtilmemiş'}
-                    </div>
-                </div>
+                <div class="result-item"><h6>Başlık:</h6><p>${result.baslik || 'N/A'}</p></div>
+                <div class="result-item"><h6>Özet:</h6><p>${result.ozet || 'N/A'}</p></div>
+                <div class="result-item"><h6>Haber Metni:</h6><div class="news-content">${result.haber_metni || 'N/A'}</div></div>
+                <div class="result-item"><h6>Kategori:</h6><span class="category-badge">${result.kategori || 'N/A'}</span></div>
+                <div class="result-item"><h6>Etiketler:</h6><div class="tags">${result.etiketler ? result.etiketler.map(tag => `<span class="tag">${tag}</span>`).join('') : 'N/A'}</div></div>
             </div>
         `;
     },
 
-    // Hide results
+    /**
+     * Sonuçlar bölümünü gizler.
+     */
     hideResults: function() {
         if (this.elements.resultSection) {
             this.elements.resultSection.style.display = 'none';
         }
     },
 
-    // Save settings
-    saveSettings: function() {
-        if (typeof Utils === 'undefined') return;
-        
-        const settings = this.getCurrentSettings();
-        Utils.storage.set('promptSettings', settings);
-    },
+    // 6.0 - Geçmiş Yönetimi ve Yardımcı Fonksiyonlar
 
-    // Load settings
-    loadSettings: function() {
-        if (typeof Utils === 'undefined') return;
-        
-        const savedSettings = Utils.storage.get('promptSettings');
-        if (!savedSettings) return;
-
-        // Apply saved settings
-        Object.keys(savedSettings).forEach(key => {
-            const element = this.elements[key];
-            if (!element) return;
-
-            if (element.type === 'checkbox') {
-                element.checked = savedSettings[key];
-            } else if (element.type === 'range') {
-                element.value = savedSettings[key];
-            } else {
-                element.value = savedSettings[key];
-            }
-        });
-    },
-
-    // Save text
+    /**
+     * Mevcut metin girişini yerel depolamaya kaydeder.
+     */
     saveText: function() {
         if (typeof Utils === 'undefined' || !this.elements.newsText) return;
         
@@ -377,7 +383,9 @@ const MainContentComponent = {
         }
     },
 
-    // Load saved text
+    /**
+     * Kaydedilmiş metni yerel depolamadan yükler.
+     */
     loadSavedText: function() {
         if (typeof Utils === 'undefined' || !this.elements.newsText) return;
         
@@ -385,17 +393,23 @@ const MainContentComponent = {
         if (savedText && !this.elements.newsText.value) {
             this.elements.newsText.value = savedText;
             this.updateCharacterCount();
-            this.updateProcessButton();
+            this.updateProcessButtonState();
         }
     },
 
-    // Save all data
+    /**
+     * Hem ayarları hem de metni aynı anda kaydeder.
+     */
     saveAll: function() {
         this.saveSettings();
         this.saveText();
     },
 
-    // Save to history
+    /**
+     * Tamamlanan bir işlemi geçmişe kaydeder.
+     * @param {Object} input - İşleme gönderilen veri.
+     * @param {Object} output - İşlemden dönen sonuç.
+     */
     saveToHistory: function(input, output) {
         if (typeof Utils === 'undefined') return;
         
@@ -409,42 +423,39 @@ const MainContentComponent = {
         let history = Utils.storage.get('processingHistory', []);
         history.unshift(historyItem);
         
-        // Keep only last 20 items
+        // Sadece son 20 işlemi sakla
         if (history.length > 20) {
             history = history.slice(0, 20);
         }
 
         Utils.storage.set('processingHistory', history);
+        console.log('Yeni işlem geçmişe eklendi.');
     },
 
-    // Clear all
+    /**
+     * Metin alanını ve sonuçları temizler.
+     */
     clearAll: function() {
         if (this.elements.newsText) {
             this.elements.newsText.value = '';
         }
         
         this.updateCharacterCount();
-        this.updateProcessButton();
+        this.updateProcessButtonState();
         this.hideResults();
         
         if (typeof Utils !== 'undefined') {
             Utils.storage.remove('currentNewsText');
-            Utils.showNotification('Tüm veriler temizlendi', 'info');
+            Utils.showNotification('Giriş alanı ve sonuçlar temizlendi.', 'info');
         }
     },
-
-    // Get processing history
-    getHistory: function() {
-        if (typeof Utils === 'undefined') return [];
-        return Utils.storage.get('processingHistory', []);
-    }
 };
 
-// Initialize when DOM is ready
+// DOM yüklendiğinde bileşeni başlat ve kaydedilmiş metni yükle
 document.addEventListener('DOMContentLoaded', function() {
     MainContentComponent.init();
     MainContentComponent.loadSavedText();
 });
 
-// Export for global access
+// Bileşeni global `window` nesnesine ekle
 window.MainContentComponent = MainContentComponent;

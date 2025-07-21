@@ -1,34 +1,53 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Kullanıcı profili oluşturma ve ayarları kaydetme scripti
+Kullanıcı Profili Oluşturma ve Ayarları Kaydetme Betiği
+========================================================
+Bu betik, belirli bir kullanıcı ('Göktuğ') için bir profil oluşturur,
+bu profili veritabanına ekler ve kullanıcı için varsayılan prompt
+ayarlarını kaydeder.
+
+İçindekiler:
+-------------
+1.0 Kullanıcı Profili Yönetimi
+    1.1 create_user_profile(): Kullanıcıyı oluşturur ve ayarlarını kaydeder.
+
+2.0 Ana Yürütme
+    2.1 main(): Betiğin ana işlevini yerine getirir.
 """
 
+# --- Gerekli Kütüphaneler ---
 import os
 import sys
-import json
 from datetime import datetime
 
-# Add the parent directory to the path to import our modules
+# --- Proje İçi Modüller ---
+# Ana dizini path'e ekleyerek modüllerin içe aktarılmasını sağla
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from database.connection import DatabaseConnection
-from services.prompt_service import PromptService
+from services.prompt_service import PromptService # Bu servisin var olduğu varsayılıyor
+
+# ==============================================================================
+# 1.0 KULLANICI PROFİLİ YÖNETİMİ
+# ==============================================================================
 
 def create_user_profile():
-    """Göktuğ için özel kullanıcı profili oluşturur"""
-    
-    # Kullanıcı bilgileri
+    """
+    1.1 Kullanıcı Profili Oluşturma ve Ayarları Kaydetme
+    ---------------------------------------------------
+    'Göktuğ' kullanıcısı için verileri tanımlar, veritabanına ekler
+    (veya günceller) ve ardından varsayılan ayarlarını kaydeder.
+    """
+    # 1. Adım: Kullanıcı verilerini ve varsayılan ayarları tanımla
     user_data = {
         'user_id': 'goktug_user_2025',
         'username': 'Göktuğ',
         'email': 'goktug@habereditoru.com',
         'display_name': 'Göktuğ Kullanıcısı',
-        'created_at': datetime.now(),
         'is_active': True
     }
     
-    # Varsayılan kullanıcı ayarları
     default_settings = {
         'title_include_city': True,
         'name_censorship': 'G.K.',
@@ -40,124 +59,91 @@ def create_user_profile():
         'auto_save': True
     }
     
-    print("Kullanıcı profili oluşturuluyor...")
-    
+    print("Kullanıcı profili oluşturma işlemi başlatılıyor...")
+    db = None
     try:
-        # Veritabanı bağlantısı
+        # 2. Adım: Veritabanı bağlantısı kur
         db = DatabaseConnection()
-        
-        # Karakter seti ayarlarını kontrol et
-        db.execute_query("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci")
-        db.execute_query("SET CHARACTER SET utf8mb4")
-        db.execute_query("SET character_set_connection = utf8mb4")
-        
-        # Önce users tablosunu oluştur (eğer yoksa)
-        create_users_table_query = """
-        CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id VARCHAR(100) UNIQUE NOT NULL,
-            username VARCHAR(100) NOT NULL,
-            email VARCHAR(255),
-            display_name VARCHAR(150),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            is_active BOOLEAN DEFAULT TRUE,
-            
-            INDEX idx_user_id (user_id),
-            INDEX idx_username (username),
-            INDEX idx_active (is_active)
-        )
-        """
-        
-        db.execute_query(create_users_table_query)
-        print("Users tablosu hazır")
-        
-        # Kullanıcıyı ekle (eğer yoksa)
+        if not db.connection:
+            raise ConnectionError("Veritabanı bağlantısı kurulamadı.")
+
+        # 3. Adım: Kullanıcıyı veritabanına ekle veya güncelle
+        # NOT: 'users' tablosunun 'schema.sql' içinde oluşturulduğu varsayılır.
         insert_user_query = """
         INSERT INTO users (user_id, username, email, display_name, is_active)
         VALUES (%s, %s, %s, %s, %s)
         ON DUPLICATE KEY UPDATE
-        username = VALUES(username),
-        display_name = VALUES(display_name),
-        updated_at = CURRENT_TIMESTAMP
+            username = VALUES(username),
+            display_name = VALUES(display_name),
+            is_active = VALUES(is_active),
+            updated_at = CURRENT_TIMESTAMP
         """
-        
         db.execute_query(insert_user_query, (
-            user_data['user_id'],
-            user_data['username'],
-            user_data['email'],
-            user_data['display_name'],
-            user_data['is_active']
+            user_data['user_id'], user_data['username'], user_data['email'],
+            user_data['display_name'], user_data['is_active']
         ))
-        print(f"Kullanıcı '{user_data['username']}' oluşturuldu/güncellendi")
+        print(f"Başarılı: Kullanıcı '{user_data['username']}' oluşturuldu/güncellendi.")
         
-        # Prompt service ile varsayılan ayarları kaydet
+        # 4. Adım: Prompt servisi ile varsayılan ayarları kaydet
         prompt_service = PromptService()
-        
-        # Aktif konfigürasyonu al
         active_config = prompt_service.get_active_config()
         if not active_config:
-            print("Hata: Aktif prompt konfigürasyonu bulunamadı")
+            print("HATA: Aktif bir prompt konfigürasyonu bulunamadı. Ayarlar kaydedilemedi.")
             return False
             
         config_id = active_config['id']
         
-        # Kullanıcı ayarlarını kaydet
-        for setting_key, setting_value in default_settings.items():
-            prompt_service.save_user_setting(
-                user_data['user_id'], 
-                config_id, 
-                setting_key, 
-                setting_value
-            )
-        
-        print(f"Varsayılan ayarlar kaydedildi: {len(default_settings)} ayar")
-        
-        # Kullanıcı ayarlarını doğrula
-        saved_settings = prompt_service.get_user_settings(user_data['user_id'], config_id)
-        print(f"Kaydedilen ayarlar doğrulandı: {len(saved_settings)} ayar bulundu")
-        
-        print("\nKullanıcı profili başarıyla oluşturuldu!")
-        print(f"   Kullanıcı ID: {user_data['user_id']}")
-        print(f"   Kullanıcı Adı: {user_data['username']}")
-        print(f"   Kayıtlı Ayarlar: {len(saved_settings)}")
-        
-        # Ayarları göster
-        print("\nVarsayılan Ayarlar:")
+        # Kullanıcı ayarlarını tek tek kaydet
         for key, value in default_settings.items():
-            print(f"   - {key}: {value}")
+            prompt_service.save_user_setting(user_data['user_id'], config_id, key, value)
+        
+        print(f"Başarılı: {len(default_settings)} adet varsayılan ayar kaydedildi.")
+        
+        # 5. Adım: Kaydedilen ayarları doğrula
+        saved_settings = prompt_service.get_user_settings(user_data['user_id'], config_id)
+        print(f"Doğrulama: {len(saved_settings)} adet ayar veritabanından okundu.")
+        
+        print("\n--- KULLANICI PROFİLİ ÖZETİ ---")
+        print(f"   Kullanıcı ID:   {user_data['user_id']}")
+        print(f"   Kullanıcı Adı:  {user_data['username']}")
+        print(f"   Kayıtlı Ayarlar:")
+        for key, value in saved_settings.items():
+            print(f"     - {key}: {value}")
             
         return True
         
     except Exception as e:
-        print(f"Hata oluştu: {e}")
+        print(f"KRİTİK HATA: Kullanıcı profili oluşturulurken bir sorun oluştu: {e}")
         return False
     finally:
-        if 'db' in locals():
+        if db:
             db.disconnect()
 
+# ==============================================================================
+# 2.0 ANA YÜRÜTME
+# ==============================================================================
+
 def main():
-    """Ana fonksiyon"""
+    """
+    2.1 Ana Fonksiyon
+    -----------------
+    Kullanıcı oluşturma sürecini başlatır ve sonuç hakkında bilgi verir.
+    """
     # Windows'ta konsol çıktısı için UTF-8 desteği
-    import sys
-    import codecs
-    if sys.stdout.encoding != 'utf-8':
+    if sys.platform == "win32" and sys.stdout.encoding != 'utf-8':
+        import codecs
         sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
     
-    print("Göktuğ için kullanıcı profili oluşturuluyor...")
+    print("--------------------------------------------------")
+    print("--- Göktuğ için Kullanıcı Profili Oluşturma ---")
+    print("--------------------------------------------------")
     
     success = create_user_profile()
     
     if success:
-        print("\nKullanıcı profili hazır!")
-        print("Artık tüm ayarlarınız veritabanında saklanacak ve dinamik olarak yüklenecek.")
-        print("\nSonraki adımlar:")
-        print("   1. Flask uygulamasını yeniden başlatın")
-        print("   2. Ayarlarınızı değiştirin - otomatik olarak kaydedilecek")
-        print("   3. Sayfayı yenileyin - ayarlarınız korunacak")
+        print("\nSONUÇ: Kullanıcı profili başarıyla oluşturuldu ve ayarlar kaydedildi!")
     else:
-        print("\nKullanıcı profili oluşturulamadı")
-        print("Lütfen veritabanı bağlantınızı kontrol edin")
+        print("\nSONUÇ: Kullanıcı profili oluşturulamadı. Lütfen yukarıdaki hataları kontrol edin.")
     
     return success
 

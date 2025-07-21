@@ -1,18 +1,39 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-Database Clean and Recreate Script
-Drops and recreates the database with the latest schema
+Veritabanı Temizleme ve Yeniden Oluşturma Betiği
+=================================================
+Bu betik, mevcut veritabanını siler (DROP) ve 'init_db.py' betiğini
+çağırarak en güncel şema ile yeniden oluşturur.
+
+İçindekiler:
+-------------
+1.0 Veritabanı İşlemleri
+    1.1 drop_database(): Veritabanını siler.
+
+2.0 Ana Yürütme
+    2.1 main(): Betiğin ana işlevini yerine getirir.
 """
 
+# --- Gerekli Kütüphaneler ---
 import mysql.connector
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
+# --- Ortam Değişkenleri ---
 load_dotenv()
 
+# ==============================================================================
+# 1.0 VERİTABANI İŞLEMLERİ
+# ==============================================================================
+
 def drop_database():
-    """Drop the database if it exists"""
+    """
+    1.1 Veritabanını Silme
+    ---------------------
+    Ortam değişkenlerinden alınan veritabanı adını kullanarak,
+    eğer varsa veritabanını siler.
+    """
     try:
         connection = mysql.connector.connect(
             host=os.getenv('DB_HOST', 'localhost'),
@@ -24,35 +45,53 @@ def drop_database():
         
         db_name = os.getenv('DB_NAME', 'haber_editor')
         cursor.execute(f"DROP DATABASE IF EXISTS {db_name}")
-        print(f"Dropped database: {db_name}")
+        print(f"Başarıyla silindi: Veritabanı '{db_name}'")
         
         cursor.close()
         connection.close()
         return True
     except mysql.connector.Error as err:
-        print(f"Error dropping database: {err}")
+        print(f"HATA: Veritabanı silinirken bir sorun oluştu: {err}")
         return False
+
+# ==============================================================================
+# 2.0 ANA YÜRÜTME
+# ==============================================================================
 
 def main():
-    """Main function to clean and recreate the database"""
-    print("Starting database cleanup...")
+    """
+    2.1 Ana Fonksiyon
+    -----------------
+    Veritabanını temizleme ve yeniden oluşturma sürecini yönetir.
+    """
+    print("Veritabanı temizleme işlemi başlatılıyor...")
     
-    # Drop the existing database
+    # 1. Adım: Mevcut veritabanını sil
     if not drop_database():
-        print("Failed to drop the database")
+        print("KRİTİK HATA: Veritabanı silinemedi. İşlem durduruldu.")
         return False
     
-    print("\nRecreating database with latest schema...")
+    print("\nVeritabanı en güncel şema ile yeniden oluşturuluyor...")
     
-    # Import and run the init_db script
-    from init_db import main as init_db_main
-    return init_db_main()
+    # 2. Adım: init_db.py betiğini çalıştırarak veritabanını yeniden oluştur
+    try:
+        from init_db import main as init_db_main
+        return init_db_main()
+    except ImportError:
+        print("KRİTİK HATA: 'init_db.py' dosyası bulunamadı veya içe aktarılamadı.")
+        return False
 
 if __name__ == "__main__":
+    print("--------------------------------------------------")
+    print("--- Veritabanı Temizleme ve Yeniden Oluşturma ---")
+    print("--------------------------------------------------")
+    
     success = main()
+    
     if not success:
-        print("\nDatabase recreation failed. Please check the error messages above.")
+        print("\nSONUÇ: Veritabanı yeniden oluşturma işlemi BAŞARISIZ OLDU.")
+        print("Lütfen yukarıdaki hata mesajlarını kontrol edin.")
         exit(1)
     else:
-        print("\nDatabase successfully cleaned and recreated with the latest schema!")
+        print("\nSONUÇ: Veritabanı başarıyla temizlendi ve yeniden oluşturuldu!")
         exit(0)

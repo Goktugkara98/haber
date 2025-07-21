@@ -1,23 +1,43 @@
-// Loading Component JavaScript
+/**
+ * @file loading.js
+ * @description Bu dosya, uygulama genelinde kullanılan ve özelleştirilebilen 
+ * yükleme ekranı (loading screen) bileşenini yönetir. Adım adım ilerleme, 
+ * animasyonlar ve farklı yükleme senaryoları için kontroller içerir.
+ *
+ * İçindekiler:
+ * 1.0 - Bileşen Yapılandırması ve Durum Yönetimi
+ * 2.0 - Başlatma ve DOM Elementleri
+ * 3.0 - Yükleme Ekranı Kontrolü (Gösterme/Gizleme)
+ * 4.0 - Adım ve İlerleme Yönetimi
+ * 5.0 - Özelleştirme ve Yardımcı Fonksiyonlar
+ */
 
+// 1.0 - Bileşen Yapılandırması ve Durum Yönetimi
 const LoadingComponent = {
-    elements: {},
-    currentStep: 0,
-    steps: [
+    elements: {}, // DOM elementleri için cache nesnesi
+    currentStep: 0, // Aktif olan adımın indeksi
+    steps: [ // Yükleme ekranında gösterilecek varsayılan adımlar
         { text: 'Metin analiz ediliyor...', icon: 'fas fa-search' },
         { text: 'AI modeli hazırlanıyor...', icon: 'fas fa-brain' },
         { text: 'İçerik üretiliyor...', icon: 'fas fa-magic' },
         { text: 'Sonuç hazırlanıyor...', icon: 'fas fa-check-circle' }
     ],
-    
-    // Initialize the component
+    stepTimer: null, // Adımlar arasındaki geçişi yöneten zamanlayıcı
+
+    // 2.0 - Başlatma ve DOM Elementleri
+
+    /**
+     * Bileşeni başlatır.
+     */
     init: function() {
         this.cacheElements();
         this.createLoadingSteps();
-        console.log('Loading Component initialized');
+        console.log('Yükleme Ekranı (LoadingComponent) bileşeni başlatıldı.');
     },
 
-    // Cache DOM elements
+    /**
+     * Gerekli DOM elementlerini seçer ve `elements` nesnesinde saklar.
+     */
     cacheElements: function() {
         this.elements = {
             section: document.getElementById('loadingSection'),
@@ -28,7 +48,9 @@ const LoadingComponent = {
         };
     },
 
-    // Create loading steps HTML
+    /**
+     * `steps` dizisindeki adımları HTML olarak oluşturur ve ekrana yerleştirir.
+     */
     createLoadingSteps: function() {
         if (!this.elements.steps) return;
 
@@ -42,40 +64,34 @@ const LoadingComponent = {
         this.elements.steps.innerHTML = stepsHTML;
     },
 
-    // Show loading
+    // 3.0 - Yükleme Ekranı Kontrolü (Gösterme/Gizleme)
+
+    /**
+     * Yükleme ekranını gösterir ve animasyonları başlatır.
+     * @param {string|null} customText - Gösterilecek özel bir metin (opsiyonel).
+     */
     show: function(customText = null) {
         if (!this.elements.section) return;
 
-        // Reset state
+        // Bileşenin durumunu sıfırla
         this.currentStep = 0;
         this.updateProgress(0);
         this.resetSteps();
 
-        // Set custom text if provided
         if (customText && this.elements.text) {
             this.elements.text.textContent = customText;
         }
 
-        // Show the section
         this.elements.section.style.display = 'block';
         this.elements.section.classList.add('show');
 
-        // Animate with GSAP if available
+        // GSAP ile animasyonları uygula
         if (typeof gsap !== 'undefined') {
             gsap.fromTo(this.elements.section, 
-                { 
-                    opacity: 0, 
-                    y: 20 
-                },
-                { 
-                    opacity: 1, 
-                    y: 0, 
-                    duration: 0.5,
-                    ease: 'power2.out'
-                }
+                { opacity: 0, y: 20 },
+                { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }
             );
 
-            // Animate spinner
             if (this.elements.spinner) {
                 gsap.set(this.elements.spinner, { rotation: 0 });
                 gsap.to(this.elements.spinner, {
@@ -87,17 +103,19 @@ const LoadingComponent = {
             }
         }
 
-        // Start step progression
+        // Adım ilerlemesini başlat
         this.startStepProgression();
     },
 
-    // Hide loading
+    /**
+     * Yükleme ekranını gizler ve animasyonları durdurur.
+     */
     hide: function() {
         if (!this.elements.section) return;
 
         this.elements.section.classList.remove('show');
 
-        // Stop any ongoing animations
+        // GSAP ile animasyonları durdur ve gizle
         if (typeof gsap !== 'undefined') {
             gsap.killTweensOf(this.elements.spinner);
             
@@ -111,31 +129,30 @@ const LoadingComponent = {
                 }
             });
         } else {
+            // GSAP yoksa standart gizleme
             setTimeout(() => {
                 this.elements.section.style.display = 'none';
             }, 300);
         }
 
-        // Clear any timers
+        // Zamanlayıcıyı temizle
         if (this.stepTimer) {
             clearInterval(this.stepTimer);
             this.stepTimer = null;
         }
     },
 
-    // Start step progression
+    // 4.0 - Adım ve İlerleme Yönetimi
+
+    /**
+     * Adımların belirli aralıklarla ilerlemesini sağlar.
+     */
     startStepProgression: function() {
         if (this.steps.length === 0) return;
+        if (this.stepTimer) clearInterval(this.stepTimer);
 
-        // Clear any existing timer
-        if (this.stepTimer) {
-            clearInterval(this.stepTimer);
-        }
+        this.activateStep(0); // İlk adımı hemen aktif et
 
-        // Start with first step
-        this.activateStep(0);
-
-        // Progress through steps
         this.stepTimer = setInterval(() => {
             this.currentStep++;
             
@@ -143,21 +160,22 @@ const LoadingComponent = {
                 this.activateStep(this.currentStep);
                 this.updateProgress((this.currentStep / this.steps.length) * 100);
             } else {
-                // Complete all steps
                 this.completeAllSteps();
                 clearInterval(this.stepTimer);
                 this.stepTimer = null;
             }
-        }, 1500); // Change step every 1.5 seconds
+        }, 1500); // Adım geçiş süresi: 1.5 saniye
     },
 
-    // Activate a specific step
+    /**
+     * Belirtilen indeksteki adımı aktif hale getirir.
+     * @param {number} stepIndex - Aktif edilecek adımın indeksi.
+     */
     activateStep: function(stepIndex) {
         const stepElements = this.elements.section.querySelectorAll('.loading-step');
         
         stepElements.forEach((step, index) => {
             step.classList.remove('active', 'completed');
-            
             if (index < stepIndex) {
                 step.classList.add('completed');
             } else if (index === stepIndex) {
@@ -165,12 +183,11 @@ const LoadingComponent = {
             }
         });
 
-        // Update main loading text
         if (this.elements.text && this.steps[stepIndex]) {
             this.elements.text.textContent = this.steps[stepIndex].text;
         }
 
-        // Animate step activation
+        // GSAP ile aktif adıma animasyon ekle
         if (typeof gsap !== 'undefined') {
             const activeStep = stepElements[stepIndex];
             if (activeStep) {
@@ -182,7 +199,9 @@ const LoadingComponent = {
         }
     },
 
-    // Complete all steps
+    /**
+     * Tüm adımları tamamlandı olarak işaretler ve ilerleme çubuğunu doldurur.
+     */
     completeAllSteps: function() {
         const stepElements = this.elements.section.querySelectorAll('.loading-step');
         stepElements.forEach(step => {
@@ -197,7 +216,9 @@ const LoadingComponent = {
         }
     },
 
-    // Reset all steps
+    /**
+     * Tüm adımların durumunu (aktif/tamamlandı) sıfırlar.
+     */
     resetSteps: function() {
         const stepElements = this.elements.section.querySelectorAll('.loading-step');
         stepElements.forEach(step => {
@@ -205,76 +226,58 @@ const LoadingComponent = {
         });
     },
 
-    // Update progress bar
+    /**
+     * İlerleme çubuğunun (progress bar) doluluk oranını günceller.
+     * @param {number} percentage - İlerleme yüzdesi (0-100).
+     */
     updateProgress: function(percentage) {
         if (!this.elements.progress) return;
 
-        this.elements.progress.style.width = percentage + '%';
-
-        // Animate progress with GSAP if available
+        // GSAP ile animasyonlu güncelleme
         if (typeof gsap !== 'undefined') {
             gsap.to(this.elements.progress, {
                 width: percentage + '%',
                 duration: 0.5,
                 ease: 'power2.out'
             });
+        } else {
+            this.elements.progress.style.width = percentage + '%';
         }
     },
 
-    // Set custom loading message
+    // 5.0 - Özelleştirme ve Yardımcı Fonksiyonlar
+
+    /**
+     * Yükleme ekranındaki ana metni değiştirir.
+     * @param {string} message - Gösterilecek yeni metin.
+     */
     setMessage: function(message) {
         if (this.elements.text) {
             this.elements.text.textContent = message;
         }
     },
 
-    // Set custom steps
+    /**
+     * Varsayılan adımları yeni bir adımlar dizisi ile değiştirir.
+     * @param {Array<Object>} customSteps - Yeni adımlar dizisi.
+     */
     setSteps: function(customSteps) {
         this.steps = customSteps;
-        this.createLoadingSteps();
+        this.createLoadingSteps(); // HTML'i yeniden oluştur
     },
 
-    // Show AI processing specific loading
-    showAIProcessing: function() {
-        this.show('AI ile haber metni işleniyor...');
-        
-        // Add AI-specific styling
-        if (this.elements.section) {
-            this.elements.section.classList.add('ai-processing');
-        }
-
-        // Create brain animation
-        this.createBrainAnimation();
-    },
-
-    // Create brain animation
-    createBrainAnimation: function() {
-        if (!this.elements.spinner || typeof gsap === 'undefined') return;
-
-        // Replace spinner with brain animation
-        const brainDiv = document.createElement('div');
-        brainDiv.className = 'ai-brain-animation';
-        brainDiv.innerHTML = '🧠';
-
-        this.elements.spinner.parentNode.replaceChild(brainDiv, this.elements.spinner);
-
-        // Animate brain
-        gsap.to(brainDiv, {
-            scale: 1.2,
-            duration: 1,
-            yoyo: true,
-            repeat: -1,
-            ease: 'power2.inOut'
-        });
-    },
-
-    // Show with custom configuration
+    /**
+     * Yükleme ekranını özel bir yapılandırma ile gösterir.
+     * @param {Object} config - Yapılandırma nesnesi.
+     * @param {string} config.message - Yükleme metni.
+     * @param {Array} [config.steps=null] - Özel adımlar.
+     * @param {boolean} [config.showProgress=true] - İlerleme çubuğu gösterilsin mi?
+     */
     showCustom: function(config) {
         const {
             message = 'Yükleniyor...',
             steps = null,
-            showProgress = true,
-            aiMode = false
+            showProgress = true
         } = config;
 
         if (steps) {
@@ -285,26 +288,31 @@ const LoadingComponent = {
             this.elements.progress.style.display = 'none';
         }
 
-        if (aiMode) {
-            this.showAIProcessing();
-        } else {
-            this.show(message);
-        }
+        this.show(message);
     },
 
-    // Check if loading is visible
+    /**
+     * Yükleme ekranının görünür olup olmadığını kontrol eder.
+     * @returns {boolean} - Görünür ise true, değilse false.
+     */
     isVisible: function() {
         return this.elements.section && 
                this.elements.section.style.display !== 'none' &&
                this.elements.section.classList.contains('show');
     },
 
-    // Get current step
+    /**
+     * Mevcut aktif adımın indeksini döndürür.
+     * @returns {number} - Aktif adım indeksi.
+     */
     getCurrentStep: function() {
         return this.currentStep;
     },
 
-    // Skip to specific step
+    /**
+     * Belirtilen bir adıma atlar.
+     * @param {number} stepIndex - Atlanacak adımın indeksi.
+     */
     skipToStep: function(stepIndex) {
         if (stepIndex >= 0 && stepIndex < this.steps.length) {
             this.currentStep = stepIndex;
@@ -314,5 +322,5 @@ const LoadingComponent = {
     }
 };
 
-// Export for global access
+// Bileşeni global `window` nesnesine ekleyerek erişilebilir yapma
 window.LoadingComponent = LoadingComponent;

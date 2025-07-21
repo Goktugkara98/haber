@@ -1,18 +1,35 @@
-// Navbar Component JavaScript
+/**
+ * @file navbar.js
+ * @description Bu dosya, uygulamanın üst navigasyon çubuğu (navbar) bileşenini yönetir.
+ * Sayfa gezintisi, tema değiştirme, yardım ve ayarlar gibi eylemleri içerir.
+ *
+ * İçindekiler:
+ * 1.0 - Bileşen Başlatma ve Olay Yönetimi
+ * 2.0 - Navigasyon ve Etkileşimler
+ * 3.0 - Görsel Efektler ve Animasyonlar
+ * 4.0 - Yardımcı Fonksiyonlar ve Modallar
+ * 5.0 - Tema ve Durum Yönetimi
+ */
 
 const NavbarComponent = {
-    elements: {},
-    
-    // Initialize the component
+    elements: {}, // DOM elementleri için cache nesnesi
+
+    // 1.0 - Bileşen Başlatma ve Olay Yönetimi
+
+    /**
+     * Bileşeni başlatır, DOM elementlerini cache'ler ve olayları bağlar.
+     */
     init: function() {
         this.cacheElements();
         this.bindEvents();
         this.setupScrollEffect();
         this.setupActiveNavigation();
-        console.log('Navbar Component initialized');
+        console.log('Navigasyon Çubuğu (NavbarComponent) bileşeni başlatıldı.');
     },
 
-    // Cache DOM elements
+    /**
+     * Gerekli DOM elementlerini seçer ve `elements` nesnesinde saklar.
+     */
     cacheElements: function() {
         this.elements = {
             navbar: document.querySelector('.custom-navbar'),
@@ -26,14 +43,14 @@ const NavbarComponent = {
         };
     },
 
-    // Bind events
+    /**
+     * Gerekli olay dinleyicilerini (event listeners) bağlar.
+     */
     bindEvents: function() {
-        // Navigation link clicks
         this.elements.navLinks.forEach(link => {
             link.addEventListener('click', this.handleNavClick.bind(this));
         });
 
-        // Action button clicks
         if (this.elements.helpBtn) {
             this.elements.helpBtn.addEventListener('click', this.showHelp.bind(this));
         }
@@ -49,13 +66,15 @@ const NavbarComponent = {
         if (this.elements.mobileToggle) {
             this.elements.mobileToggle.addEventListener('click', this.toggleMobileMenu.bind(this));
         }
-
-
     },
 
-    // Handle navigation link clicks
+    // 2.0 - Navigasyon ve Etkileşimler
+
+    /**
+     * Navigasyon linklerine tıklandığında çalışır.
+     */
     handleNavClick: function(e) {
-        // Don't prevent default for actual links, only for placeholder links
+        // Eğer link sadece bir placeholder ise (href="#"), varsayılan davranışı engelle
         if (e.target.closest('a').getAttribute('href') === '#') {
             e.preventDefault();
             this.showComingSoon(e.target.textContent.trim());
@@ -64,48 +83,30 @@ const NavbarComponent = {
         this.setActiveNavItem(e.target.closest('a'));
     },
 
-    // Set active navigation item
+    /**
+     * Tıklanan navigasyon öğesini "aktif" olarak işaretler.
+     * @param {HTMLElement} activeLink - Aktif hale getirilecek link elementi.
+     */
     setActiveNavItem: function(activeLink) {
-        // Remove active class from all links
         this.elements.navLinks.forEach(link => {
             link.classList.remove('active');
         });
         
-        // Add active class to clicked link
         if (activeLink) {
             activeLink.classList.add('active');
         }
     },
 
-    // Setup scroll effect
-    setupScrollEffect: function() {
-        let lastScrollY = window.scrollY;
-        
-        window.addEventListener('scroll', () => {
-            const currentScrollY = window.scrollY;
-            
-            if (this.elements.navbar) {
-                if (currentScrollY > 50) {
-                    this.elements.navbar.classList.add('scrolled');
-                } else {
-                    this.elements.navbar.classList.remove('scrolled');
-                }
-            }
-            
-            lastScrollY = currentScrollY;
-        });
-    },
-
-    // Setup active navigation based on current page
+    /**
+     * Sayfa yüklendiğinde mevcut URL'e göre doğru navigasyon öğesini aktif hale getirir.
+     */
     setupActiveNavigation: function() {
         const currentPath = window.location.pathname;
         
         this.elements.navLinks.forEach(link => {
             const href = link.getAttribute('href');
             
-            if (href === currentPath || 
-                (currentPath === '/' && href === '/') ||
-                (currentPath.includes('/news') && link.textContent.includes('Haber'))) {
+            if (href === currentPath || (currentPath === '/' && href === '/')) {
                 link.classList.add('active');
             } else {
                 link.classList.remove('active');
@@ -113,79 +114,9 @@ const NavbarComponent = {
         });
     },
 
-    // Show help modal
-    showHelp: function() {
-        const helpContent = `
-            <div class="help-content">
-                <h5><i class="fas fa-question-circle me-2"></i>Yardım</h5>
-                <div class="help-sections">
-                    <div class="help-section">
-                        <h6>Klavye Kısayolları:</h6>
-                        <ul>
-                            <li><kbd>Ctrl + Enter</kbd> - Haber işle</li>
-                            <li><kbd>Ctrl + S</kbd> - Kaydet</li>
-                            <li><kbd>Esc</kbd> - Temizle</li>
-                            <li><kbd>F1</kbd> - Bu yardım menüsü</li>
-                        </ul>
-                    </div>
-                    <div class="help-section">
-                        <h6>Özellikler:</h6>
-                        <ul>
-                            <li>Otomatik kayıt</li>
-                            <li>Metin doğrulama</li>
-                            <li>AI ile haber işleme</li>
-                            <li>Geçmiş takibi</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        if (typeof Utils !== 'undefined') {
-            Utils.showNotification(helpContent, 'info', 8000);
-        }
-        
-        // Animate help button
-        this.animateActionButton(this.elements.helpBtn);
-    },
-
-    // Open settings
-    openSettings: function() {
-        // For now, show a coming soon message
-        // Later this will open a settings modal
-        if (typeof Utils !== 'undefined') {
-            Utils.showNotification('Ayarlar paneli yakında eklenecek!', 'info', 3000);
-        }
-        
-        // Animate settings button
-        this.animateActionButton(this.elements.settingsBtn);
-    },
-
-    // Toggle theme
-    toggleTheme: function() {
-        const currentTheme = document.body.getAttribute('data-theme') || 'light';
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        
-        document.body.setAttribute('data-theme', newTheme);
-        
-        // Update theme button state
-        if (newTheme === 'dark') {
-            this.elements.themeBtn.classList.add('active');
-        } else {
-            this.elements.themeBtn.classList.remove('active');
-        }
-        
-        // Save theme preference
-        if (typeof Utils !== 'undefined') {
-            Utils.storage.set('theme', newTheme);
-            Utils.showNotification(`${newTheme === 'dark' ? 'Karanlık' : 'Aydınlık'} tema aktif`, 'success', 2000);
-        }
-        
-        // Animate theme button
-        this.animateActionButton(this.elements.themeBtn);
-    },
-
-    // Toggle mobile menu
+    /**
+     * Mobil menüyü açar veya kapatır.
+     */
     toggleMobileMenu: function() {
         const navSection = document.querySelector('.navbar-nav-section');
         
@@ -193,11 +124,30 @@ const NavbarComponent = {
             navSection.classList.toggle('mobile-active');
         }
         
-        // Animate mobile toggle
         this.animateActionButton(this.elements.mobileToggle);
     },
 
-    // Animate action button
+    // 3.0 - Görsel Efektler ve Animasyonlar
+
+    /**
+     * Sayfa kaydırıldığında navbar'a gölge efekti ekler.
+     */
+    setupScrollEffect: function() {
+        window.addEventListener('scroll', () => {
+            if (this.elements.navbar) {
+                if (window.scrollY > 50) {
+                    this.elements.navbar.classList.add('scrolled');
+                } else {
+                    this.elements.navbar.classList.remove('scrolled');
+                }
+            }
+        });
+    },
+
+    /**
+     * Tıklanan bir eylem butonuna (yardım, ayarlar vb.) animasyon uygular.
+     * @param {HTMLElement} button - Animasyon uygulanacak buton elementi.
+     */
     animateActionButton: function(button) {
         if (!button || typeof gsap === 'undefined') return;
         
@@ -213,16 +163,81 @@ const NavbarComponent = {
         );
     },
 
+    // 4.0 - Yardımcı Fonksiyonlar ve Modallar
 
+    /**
+     * Yardım içeriğini bir bildirim olarak gösterir.
+     */
+    showHelp: function() {
+        const helpContent = `
+            <div class="help-content">
+                <h5><i class="fas fa-question-circle me-2"></i>Yardım Menüsü</h5>
+                <div class="help-section">
+                    <h6>Klavye Kısayolları:</h6>
+                    <ul>
+                        <li><kbd>Ctrl + Enter</kbd> - Metni İşle</li>
+                        <li><kbd>Ctrl + S</kbd> - Ayarları Kaydet</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+        
+        if (typeof Utils !== 'undefined') {
+            Utils.showNotification(helpContent, 'info', 8000);
+        }
+        
+        this.animateActionButton(this.elements.helpBtn);
+    },
 
-    // Show coming soon message
+    /**
+     * Ayarlar panelini açar (gelecekte eklenecek).
+     */
+    openSettings: function() {
+        if (typeof Utils !== 'undefined') {
+            Utils.showNotification('Ayarlar paneli yakında eklenecektir.', 'info', 3000);
+        }
+        
+        this.animateActionButton(this.elements.settingsBtn);
+    },
+
+    /**
+     * Henüz tamamlanmamış özellikler için bir bildirim gösterir.
+     * @param {string} feature - Özelliğin adı.
+     */
     showComingSoon: function(feature) {
         if (typeof Utils !== 'undefined') {
-            Utils.showNotification(`${feature} özelliği yakında eklenecek!`, 'info', 3000);
+            Utils.showNotification(`'${feature}' özelliği yakında eklenecektir.`, 'info', 3000);
         }
     },
 
-    // Load saved theme
+    // 5.0 - Tema ve Durum Yönetimi
+
+    /**
+     * Açık ve koyu tema arasında geçiş yapar.
+     */
+    toggleTheme: function() {
+        const currentTheme = document.body.getAttribute('data-theme') || 'light';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        
+        document.body.setAttribute('data-theme', newTheme);
+        
+        // Tema butonu ikonunu güncelle
+        if (this.elements.themeBtn) {
+            this.elements.themeBtn.classList.toggle('active', newTheme === 'dark');
+        }
+        
+        // Tema tercihini kaydet
+        if (typeof Utils !== 'undefined') {
+            Utils.storage.set('theme', newTheme);
+            Utils.showNotification(`${newTheme === 'dark' ? 'Karanlık' : 'Aydınlık'} tema etkinleştirildi.`, 'success', 2000);
+        }
+        
+        this.animateActionButton(this.elements.themeBtn);
+    },
+
+    /**
+     * Kaydedilmiş tema tercihini yükler ve uygular.
+     */
     loadSavedTheme: function() {
         if (typeof Utils !== 'undefined') {
             const savedTheme = Utils.storage.get('theme', 'light');
@@ -234,69 +249,34 @@ const NavbarComponent = {
         }
     },
 
-    // Update active navigation programmatically
-    updateActiveNav: function(path) {
-        this.elements.navLinks.forEach(link => {
-            const href = link.getAttribute('href');
-            
-            if (href === path) {
-                link.classList.add('active');
-            } else {
-                link.classList.remove('active');
-            }
-        });
-    },
-
-    // Get current active navigation
-    getCurrentActiveNav: function() {
-        const activeLink = document.querySelector('.navbar-nav-link.active');
-        return activeLink ? activeLink.textContent.trim() : null;
-    },
-
-    // Show notification badge on action button
+    /**
+     * Bir eylem butonunun üzerine bildirim rozeti (badge) ekler.
+     * @param {string} buttonType - Butonun tipi ('help', 'settings' vb.).
+     * @param {number} count - Rozette gösterilecek sayı.
+     */
     showNotificationBadge: function(buttonType, count = 1) {
         const button = this.elements[buttonType + 'Btn'];
         if (!button) return;
         
-        // Remove existing badge
-        const existingBadge = button.querySelector('.notification-badge');
-        if (existingBadge) {
-            existingBadge.remove();
+        let badge = button.querySelector('.notification-badge');
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'notification-badge';
+            button.appendChild(badge);
         }
         
-        // Add new badge
-        const badge = document.createElement('span');
-        badge.className = 'notification-badge';
         badge.textContent = count > 9 ? '9+' : count;
-        badge.style.cssText = `
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: var(--danger-color);
-            color: white;
-            border-radius: 50%;
-            width: 16px;
-            height: 16px;
-            font-size: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        `;
         
-        button.appendChild(badge);
-        
-        // Animate badge appearance
+        // GSAP ile animasyon
         if (typeof gsap !== 'undefined') {
-            gsap.from(badge, {
-                scale: 0,
-                duration: 0.3,
-                ease: 'back.out(1.7)'
-            });
+            gsap.from(badge, { scale: 0, duration: 0.3, ease: 'back.out(1.7)' });
         }
     },
 
-    // Hide notification badge
+    /**
+     * Bir butondaki bildirim rozetini kaldırır.
+     * @param {string} buttonType - Butonun tipi.
+     */
     hideNotificationBadge: function(buttonType) {
         const button = this.elements[buttonType + 'Btn'];
         if (!button) return;
@@ -304,12 +284,7 @@ const NavbarComponent = {
         const badge = button.querySelector('.notification-badge');
         if (badge) {
             if (typeof gsap !== 'undefined') {
-                gsap.to(badge, {
-                    scale: 0,
-                    duration: 0.2,
-                    ease: 'power2.in',
-                    onComplete: () => badge.remove()
-                });
+                gsap.to(badge, { scale: 0, duration: 0.2, ease: 'power2.in', onComplete: () => badge.remove() });
             } else {
                 badge.remove();
             }
@@ -317,11 +292,11 @@ const NavbarComponent = {
     }
 };
 
-// Initialize when DOM is ready
+// DOM yüklendiğinde bileşeni başlat ve temayı yükle
 document.addEventListener('DOMContentLoaded', function() {
     NavbarComponent.init();
     NavbarComponent.loadSavedTheme();
 });
 
-// Export for global access
+// Bileşeni global `window` nesnesine ekle
 window.NavbarComponent = NavbarComponent;

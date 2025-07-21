@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Haber Uygulaması{% endblock %}</title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -17,6 +18,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/loading.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/settings.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/preview-modal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/statistics.css') }}">
     
     {% block extra_css %}{% endblock %}
 </head>
@@ -41,7 +43,7 @@
                     </a>
                 </div>
                 <div class="navbar-nav-item">
-                    <a href="#" class="navbar-nav-link">
+                    <a href="{{ url_for('main.history') }}" class="navbar-nav-link">
                         <i class="fas fa-history"></i>
                         Geçmiş
                     </a>
@@ -54,8 +56,31 @@
                 </div>
             </div>
             
+            <!-- Statistics Section -->
+            <div class="navbar-stats-section" id="navbarStats">
+                <div class="stats-item" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Bekleyen İşlemler">
+                    <i class="fas fa-clock text-warning"></i>
+                    <span class="stats-count" id="pendingCount">0</span>
+                </div>
+                <div class="stats-item" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Tamamlanan İşlemler">
+                    <i class="fas fa-check-circle text-success"></i>
+                    <span class="stats-count" id="completedCount">0</span>
+                </div>
+                <div class="stats-item" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Başarısız İşlemler">
+                    <i class="fas fa-times-circle text-danger"></i>
+                    <span class="stats-count" id="failedCount">0</span>
+                </div>
+                <div class="stats-item" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Toplam İşlem">
+                    <i class="fas fa-newspaper text-info"></i>
+                    <span class="stats-count" id="totalCount">0</span>
+                </div>
+            </div>
+            
             <!-- Right Section - Action Buttons -->
             <div class="navbar-actions-section">
+                <button class="navbar-action-btn" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Geçmiş" onclick="toggleHistoryPanel()">
+                    <i class="fas fa-history"></i>
+                </button>
                 <button class="navbar-action-btn" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Yardım">
                     <i class="fas fa-question-circle"></i>
                 </button>
@@ -73,6 +98,22 @@
             </button>
         </div>
     </nav>
+
+    <!-- History Panel -->
+    <div class="history-panel" id="historyPanel">
+        <div class="history-header">
+            <h5><i class="fas fa-history me-2"></i>İşlem Geçmişi</h5>
+            <button class="btn-close" onclick="toggleHistoryPanel()"></button>
+        </div>
+        <div class="history-content" id="historyContent">
+            <div class="loading-spinner" id="historyLoading">
+                <i class="fas fa-spinner fa-spin"></i> Geçmiş yükleniyor...
+            </div>
+            <div class="history-list" id="historyList">
+                <!-- History items will be loaded here -->
+            </div>
+        </div>
+    </div>
 
     <main class="container-fluid">
         {% block content %}{% endblock %}
@@ -100,8 +141,11 @@
     <script src="{{ url_for('static', filename='js/components/loading.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/preview-modal.js') }}"></script>
     
-    <!-- Content controller -->
-    <script src="{{ url_for('static', filename='js/content.js') }}"></script>
+    <!-- Statistics and History Management -->
+    <script src="{{ url_for('static', filename='js/components/statistics.js') }}"></script>
+    
+    <!-- Main JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     
     <!-- Application Initialization (must load last) -->
     <script src="{{ url_for('static', filename='js/app-init.js') }}"></script>

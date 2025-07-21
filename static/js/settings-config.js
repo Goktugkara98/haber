@@ -1,11 +1,28 @@
 /**
- * Settings Configuration
- * Maps database keys to all UI display logic
- * Updated based on user requirements - 2025-07-21
+ * @file settings-config.js
+ * @description Ayar Yapılandırma Modülü
+ * * Bu dosya, uygulamadaki tüm ayarların merkezi yapılandırmasını içerir.
+ * Her ayarın veritabanı anahtarı (dbKey), arayüzde görünecek adı (displayName),
+ * seçenekleri, varsayılan değeri ve kategorisi burada tanımlanır. Bu yapı,
+ * ayarların dinamik olarak oluşturulmasını ve yönetilmesini sağlar.
+ *
+ * İçindekiler:
+ * 1.0 SettingsConfig Nesnesi - Tüm ayarların yapılandırması.
+ * 2.0 Categories Nesnesi - Ayar kategorilerinin tanımı.
+ * 3.0 SettingsUtils Nesnesi - Ayarlarla ilgili yardımcı fonksiyonlar.
+ * 3.1 getConfig() - Belirli bir ayarın yapılandırmasını getirir.
+ * 3.2 getDisplayLabel() - Bir ayar değeri için okunabilir etiketi getirir.
+ * 3.3 getAllKeys() - Tüm ayar anahtarlarını listeler.
+ * 3.4 getByCategory() - Ayarları kategoriye göre gruplar.
+ * 3.5 getDefaults() - Tüm ayarlar için varsayılan değerleri döndürür.
  */
 
+// =================================================================================================
+// 1.0 SettingsConfig Nesnesi
+// =================================================================================================
+
 const SettingsConfig = {
-    // Haber Çeşidi (News Type)
+    // Haber Çeşidi
     newsType: {
         dbKey: 'newsType',
         displayName: 'Haber Çeşidi',
@@ -19,7 +36,7 @@ const SettingsConfig = {
         order: 1
     },
 
-    // Hedef Kategori (Target Category)
+    // Hedef Kategori
     targetCategory: {
         dbKey: 'targetCategory',
         displayName: 'Hedef Kategori',
@@ -45,49 +62,49 @@ const SettingsConfig = {
         order: 2
     },
 
-    // Başlıkta Şehir Bilgisi (City Info in Title)
+    // Başlıkta Şehir Bilgisi
     titleCityInfo: {
         dbKey: 'titleCityInfo',
         displayName: 'Başlıkta Şehir Bilgisi',
         previewText: 'Başlıkta şehir bilgisi',
         options: [
-            { value: 'True', label: 'Evet' },
-            { value: 'False', label: 'Hayır' }
+            { value: 'True', label: 'Evet, eklensin' },
+            { value: 'False', label: 'Hayır, eklenmesin' }
         ],
         defaultValue: 'False',
         category: 'content',
         order: 3
     },
 
-    // Şirket Bilgisi Kaldır (Remove Company Info)
+    // Şirket Bilgisi Kaldır
     removeCompanyInfo: {
         dbKey: 'removeCompanyInfo',
         displayName: 'Şirket Bilgisi Kaldır',
         previewText: 'Şirket bilgisi kaldırma',
         options: [
-            { value: 'True', label: 'Evet' },
-            { value: 'False', label: 'Hayır' }
+            { value: 'True', label: 'Evet, kaldırılsın' },
+            { value: 'False', label: 'Hayır, kalsın' }
         ],
         defaultValue: 'True',
         category: 'privacy',
         order: 4
     },
 
-    // Plaka Bilgisi Kaldır (Remove Plate Info)
+    // Plaka Bilgisi Kaldır
     removePlateInfo: {
         dbKey: 'removePlateInfo',
         displayName: 'Plaka Bilgisi Kaldır',
         previewText: 'Plaka bilgisi kaldırma',
         options: [
-            { value: 'True', label: 'Evet' },
-            { value: 'False', label: 'Hayır' }
+            { value: 'True', label: 'Evet, kaldırılsın' },
+            { value: 'False', label: 'Hayır, kalsın' }
         ],
         defaultValue: 'True',
         category: 'privacy',
         order: 5
     },
 
-    // Etiket Sayısı (Tag Count)
+    // Etiket Sayısı
     tagCount: {
         dbKey: 'tagCount',
         displayName: 'Etiket Sayısı',
@@ -102,26 +119,55 @@ const SettingsConfig = {
         order: 6
     },
 
-    // Özel Talimatlar (Custom Instructions)
+    // Özel Talimatlar
     customInstructions: {
         dbKey: 'customInstructions',
         displayName: 'Özel Talimatlar',
         previewText: 'Özel talimatlar',
         type: 'textarea',
-        placeholder: 'Haber oluşturma ile ilgili özel talimatlarınızı yazın...',
+        placeholder: 'Haber oluşturma ile ilgili ek talimatlarınızı buraya yazın...',
         defaultValue: '',
         category: 'content',
         order: 7
     },
 
-    // Çıktı Formatı (Output Format)
+    // İsim Sansürleme
+    nameCensorship: {
+        dbKey: 'nameCensorship',
+        displayName: 'İsim Sansürleme',
+        previewText: 'İsim sansürleme',
+        options: [
+            { value: 'none', label: 'Sansürleme Yok' },
+            { value: 'initials', label: 'Baş Harfler' },
+            { value: 'full', label: 'Tam Sansür' }
+        ],
+        defaultValue: 'initials',
+        category: 'privacy',
+        order: 7
+    },
+
+    // Yazım Stili
+    writingStyle: {
+        dbKey: 'writingStyle',
+        displayName: 'Yazım Stili',
+        previewText: 'Yazım stili',
+        options: [
+            { value: 'formal', label: 'Resmi' },
+            { value: 'informal', label: 'Samimi' }
+        ],
+        defaultValue: 'formal',
+        category: 'content',
+        order: 9
+    },
+
+    // Çıktı Formatı
     outputFormat: {
         dbKey: 'outputFormat',
         displayName: 'Çıktı Formatı',
         previewText: 'Çıktı formatı',
         options: [
-            { value: 'json', label: 'JSON' },
-            { value: 'text', label: 'Metin' },
+            { value: 'json', label: 'JSON (Tavsiye Edilen)' },
+            { value: 'text', label: 'Düz Metin' },
             { value: 'markdown', label: 'Markdown' }
         ],
         defaultValue: 'json',
@@ -130,97 +176,88 @@ const SettingsConfig = {
     }
 };
 
-// Category definitions
+// =================================================================================================
+// 2.0 Categories Nesnesi
+// =================================================================================================
+
 const Categories = {
     content: {
         name: 'İçerik Ayarları',
-        icon: 'fas fa-file-text',
-        description: 'Haber içeriği ile ilgili temel ayarlar',
+        icon: 'fas fa-file-alt',
+        description: 'Haberin başlığı, kategorisi ve içeriği ile ilgili temel ayarlar.',
         order: 1
     },
     privacy: {
         name: 'Gizlilik Ayarları',
         icon: 'fas fa-shield-alt',
-        description: 'Kişisel bilgilerin korunması ayarları',
+        description: 'Haber metnindeki hassas bilgilerin (şirket, plaka vb.) korunması ile ilgili ayarlar.',
         order: 2
     },
     format: {
         name: 'Format Ayarları',
         icon: 'fas fa-cogs',
-        description: 'Çıktı formatı ve görünüm ayarları',
+        description: 'Üretilecek çıktının formatını ve yapısal özelliklerini belirleyen ayarlar.',
         order: 3
     }
 };
 
-// Utility functions
+// =================================================================================================
+// 3.0 SettingsUtils Nesnesi
+// =================================================================================================
+
 const SettingsUtils = {
     /**
-     * Get setting config by key
+     * 3.1 getConfig()
+     * Verilen anahtara (key) karşılık gelen ayar yapılandırmasını döndürür.
+     * @param {string} key - Ayar anahtarı.
+     * @returns {object|null} - Ayar yapılandırması veya bulunamazsa null.
      */
     getConfig(key) {
         return SettingsConfig[key] || null;
     },
 
     /**
-     * Get display label for a setting value
+     * 3.2 getDisplayLabel()
+     * Bir ayarın teknik değerini (örn: 'comprehensive') kullanıcı dostu bir etikete (örn: 'Kapsamlı Haber') çevirir.
+     * @param {string} key - Ayar anahtarı.
+     * @param {string|boolean} value - Ayarın mevcut değeri.
+     * @returns {string} - Kullanıcı dostu etiket.
      */
     getDisplayLabel(key, value) {
         try {
             const config = this.getConfig(key);
-            if (!config) {
-                console.warn(`No config found for setting: ${key}`);
-                return value;
-            }
+            if (!config) return value;
 
-            // Handle boolean values
-            if (value === true || value === 'true' || value === 'True') return 'Evet';
-            if (value === false || value === 'false' || value === 'False') return 'Hayır';
+            if (typeof value === 'boolean') value = value.toString();
+            if (value === 'True') return 'Evet';
+            if (value === 'False') return 'Hayır';
 
-            // Special handling for nameCensorship
-            if (key === 'nameCensorship') {
-                return this.getNameCensorshipText(value);
-            }
-
-            // If no options array or value is empty, return as is
             if (!config.options || !Array.isArray(config.options) || value === undefined || value === '') {
-                return value;
+                return value || 'Belirtilmemiş';
             }
 
-            // Try to find matching option
-            const option = config.options.find(opt => {
-                // Handle both string and number comparisons
-                return String(opt.value) === String(value);
-            });
-
+            const option = config.options.find(opt => String(opt.value) === String(value));
             return option ? option.label : value;
         } catch (error) {
-            console.error(`Error getting display label for ${key}=${value}:`, error);
-            return value; // Return original value on error
+            console.error(`Hata: Ayar etiketi alınırken sorun oluştu (${key}=${value}):`, error);
+            return value;
         }
     },
     
     /**
-     * Get display text for nameCensorship setting
-     */
-    getNameCensorshipText(value) {
-        const options = {
-            'none': 'Sansürsüz',
-            'partial': 'Kısmi Sansür',
-            'full': 'Tam Sansür',
-            'initials': 'Sadece Baş Harfler'
-        };
-        return options[value] || value;
-    },
-
-    /**
-     * Get all setting keys
+     * 3.3 getAllKeys()
+     * `SettingsConfig` içinde tanımlı tüm ayar anahtarlarının bir listesini döndürür.
+     * @returns {string[]} - Ayar anahtarları dizisi.
      */
     getAllKeys() {
         return Object.keys(SettingsConfig);
     },
 
     /**
-     * Get settings by category
+     * 3.4 getByCategory()
+     * Ayarları kategorilerine göre gruplandırılmış bir nesne olarak döndürür.
+     * @param {string} category - Kategori adı.
+     * @returns {object} - Belirtilen kategoriye ait ayarlar.
      */
     getByCategory(category) {
         const result = {};
@@ -233,7 +270,9 @@ const SettingsUtils = {
     },
 
     /**
-     * Get default values for all settings
+     * 3.5 getDefaults()
+     * Tüm ayarlar için tanımlanmış varsayılan değerleri içeren bir nesne döndürür.
+     * @returns {object} - Varsayılan ayarlar nesnesi.
      */
     getDefaults() {
         const defaults = {};
@@ -244,7 +283,7 @@ const SettingsUtils = {
     }
 };
 
-// Make available globally
+// Yapılandırmaları ve yardımcı fonksiyonları global scope'a taşı
 window.SettingsConfig = SettingsConfig;
 window.Categories = Categories;
 window.SettingsUtils = SettingsUtils;

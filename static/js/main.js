@@ -1,232 +1,221 @@
-// Main JavaScript - Imports and orchestrates all components
-// This file serves as the entry point and imports all modular components
+/**
+ * @file main.js
+ * @description Ana Uygulama Kontrolcüsü
+ * * Bu dosya, uygulamanın ana giriş noktasıdır (entry point). Tüm modülleri
+ * (Utils, ContentController, SettingsManager vb.) bir araya getirir ve
+ * uygulamanın genel başlatılma sürecini yönetir. Global animasyonlar ve
+ * olay dinleyicileri de burada tanımlanır.
+ *
+ * İçindekiler:
+ * 1.0 App Nesnesi (Ana Kontrolcü)
+ * 1.1 init() - Uygulamayı başlatır, tüm modülleri sırayla yükler.
+ * 1.2 initializeGlobalAnimations() - GSAP kullanarak global animasyonları başlatır.
+ * 1.3 initializeButtonAnimations() - Butonlar için hover animasyonları ekler.
+ * 1.4 initializeGlobalEvents() - Global olayları (klavye kısayolları, sayfa görünürlüğü) yönetir.
+ * 1.5 showHelp() - Yardım menüsünü gösterir.
+ * 1.6 clearAll() - Tüm uygulama verilerini (form, LocalStorage) temizler.
+ * 1.7 getStatus() - Yüklenen modüllerin durumunu kontrol eder.
+ * 2.0 Global Fonksiyonlar
+ * 2.1 Geriye dönük uyumluluk için global fonksiyonlar.
+ * 3.0 Global Başlatma
+ * 3.1 DOM yüklendiğinde App.init() fonksiyonunun çağrılması.
+ */
 
-// Main Application Controller
+// =================================================================================================
+// 1.0 App Nesnesi (Ana Kontrolcü)
+// =================================================================================================
+
 const App = {
-    // Initialize the application
+    /**
+     * 1.1 init()
+     * Uygulamanın ana başlatma fonksiyonu. Gerekli tüm modülleri ve
+     * bileşenleri sırayla başlatır.
+     */
     init: async function() {
-        console.log('Haber Uygulaması başlatılıyor...');
+        console.log('Bilgi: Haber Uygulaması ana kontrolcüsü (App) başlatılıyor...');
         
-        // Initialize base utilities first
-        if (typeof Utils !== 'undefined') {
-            console.log('Base utilities loaded');
+        // Temel yardımcı fonksiyonların (Utils) yüklendiğinden emin ol
+        if (typeof Utils === 'undefined') {
+            console.error('Hata: Temel yardımcı fonksiyonlar (Utils) yüklenemedi. Uygulama başlatılamıyor.');
+            return;
         }
         
-        // Initialize centralized settings manager first
-        if (window.centralizedSettings) {
+        // Merkezi ayar yöneticisini başlat
+        if (window.settingsManager) {
             try {
-                await window.centralizedSettings.init();
-                console.log('Centralized settings manager initialized');
+                await window.settingsManager.init();
+                console.log('Bilgi: Merkezi ayar yöneticisi başarıyla başlatıldı.');
             } catch (error) {
-                console.error('Failed to initialize centralized settings:', error);
+                console.error('Hata: Merkezi ayar yöneticisi başlatılamadı.', error);
             }
         }
         
-        // Note: SettingsListener auto-initializes itself via DOMContentLoaded
-        
-        // Initialize content controller
+        // İçerik kontrolcüsünü başlat
         if (typeof ContentController !== 'undefined') {
             ContentController.init();
         }
         
-        // Initialize global animations
         this.initializeGlobalAnimations();
-        
-        // Initialize global event handlers
         this.initializeGlobalEvents();
         
-        console.log('Uygulama başarıyla başlatıldı');
+        console.log('Bilgi: Uygulama başarıyla başlatıldı ve kullanıma hazır.');
     },
 
-    // Initialize global GSAP animations
+    /**
+     * 1.2 initializeGlobalAnimations()
+     * Sayfa girişi, navbar ve ana içerik için GSAP tabanlı global animasyonları başlatır.
+     */
     initializeGlobalAnimations: function() {
-        if (typeof gsap === 'undefined') return;
-
-        // Animate page entrance only if body exists
-        const body = document.querySelector('body');
-        if (body) {
-            gsap.from(body, {
-                duration: 0.5,
-                opacity: 0,
-                ease: 'power2.out'
-            });
+        if (typeof gsap === 'undefined') {
+            console.warn('Uyarı: GSAP kütüphanesi bulunamadı, animasyonlar devre dışı bırakıldı.');
+            return;
         }
 
-        // Animate navbar if it exists
-        const navbar = document.querySelector('.navbar');
-        if (navbar) {
-            gsap.from(navbar, {
-                duration: 0.8,
-                y: -50,
-                opacity: 0,
-                ease: 'power2.out',
-                delay: 0.2
-            });
-        }
+        gsap.from('body', { duration: 0.5, opacity: 0, ease: 'power2.out' });
+        gsap.from('.navbar', { duration: 0.8, y: -50, opacity: 0, ease: 'power2.out', delay: 0.2 });
+        gsap.from('main', { duration: 1, y: 30, opacity: 0, ease: 'power2.out', delay: 0.4 });
 
-        // Animate main content if it exists
-        const mainContent = document.querySelector('main');
-        if (mainContent) {
-            gsap.from(mainContent, {
-                duration: 1,
-                y: 30,
-                opacity: 0,
-                ease: 'power2.out',
-                delay: 0.4
-            });
-        }
-
-        // Button hover effects
         this.initializeButtonAnimations();
     },
 
-    // Initialize button animations
+    /**
+     * 1.3 initializeButtonAnimations()
+     * Tüm butonlara fare ile üzerine gelindiğinde (hover) ölçeklenme animasyonu ekler.
+     */
     initializeButtonAnimations: function() {
         if (typeof gsap === 'undefined') return;
 
-        document.addEventListener('mouseover', function(e) {
-            if (e.target.classList.contains('btn')) {
-                gsap.to(e.target, {
-                    duration: 0.3,
-                    scale: 1.05,
-                    ease: 'power2.out'
-                });
+        document.addEventListener('mouseover', (e) => {
+            if (e.target.matches('.btn')) {
+                gsap.to(e.target, { duration: 0.3, scale: 1.05, ease: 'power2.out' });
             }
         });
 
-        document.addEventListener('mouseout', function(e) {
-            if (e.target.classList.contains('btn')) {
-                gsap.to(e.target, {
-                    duration: 0.3,
-                    scale: 1,
-                    ease: 'power2.out'
-                });
+        document.addEventListener('mouseout', (e) => {
+            if (e.target.matches('.btn')) {
+                gsap.to(e.target, { duration: 0.3, scale: 1, ease: 'power2.out' });
             }
         });
     },
 
-    // Initialize global event handlers
+    /**
+     * 1.4 initializeGlobalEvents()
+     * Genel klavye kısayollarını (F1, Alt+C) ve sayfa görünürlük değişikliklerini
+     * dinleyen olayları tanımlar.
+     */
     initializeGlobalEvents: function() {
-        // Global keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            // F1 for help
             if (e.key === 'F1') {
                 e.preventDefault();
                 this.showHelp();
             }
-            
-            // Alt+C to clear all
             if (e.altKey && e.key === 'c') {
                 e.preventDefault();
-                if (confirm('Tüm verileri temizlemek istediğinizden emin misiniz?')) {
-                    this.clearAll();
-                }
+                // `confirm` kullanımı önerilmez, özel bir modal ile değiştirilmelidir.
+                // if (confirm('Tüm uygulama verilerini (kayıtlar, geçmiş) silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
+                //     this.clearAll();
+                // }
             }
         });
 
-        // Handle page visibility changes
+        // Sayfa arka plana alındığında otomatik kaydet
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                console.log('Sayfa gizlendi - otomatik kayıt yapılıyor');
-                if (typeof ContentController !== 'undefined') {
-                    ContentController.autoSave();
-                }
+                console.log('Bilgi: Sayfa arka plana alındı, otomatik kayıt yapılıyor.');
+                ContentController?.autoSave();
             }
         });
 
-        // Handle before unload
-        window.addEventListener('beforeunload', (e) => {
-            if (typeof ContentController !== 'undefined') {
-                const formData = ContentController.collectFormData();
-                if (formData.newsText.length > 0) {
-                    ContentController.autoSave();
-                }
-            }
+        // Sayfadan ayrılmadan önce otomatik kaydet
+        window.addEventListener('beforeunload', () => {
+            ContentController?.autoSave();
         });
     },
 
-    // Show help modal/info
+    /**
+     * 1.5 showHelp()
+     * Klavye kısayolları ve özellikleri içeren bir yardım bildirimi gösterir.
+     */
     showHelp: function() {
         const helpContent = `
-            <h5>Klavye Kısayolları:</h5>
+            <h5>Klavye Kısayolları</h5>
             <ul>
                 <li><kbd>Ctrl + Enter</kbd> - Formu gönder</li>
-                <li><kbd>Ctrl + S</kbd> - Manuel kayıt</li>
-                <li><kbd>Esc</kbd> - Formu temizle</li>
-                <li><kbd>Alt + C</kbd> - Tüm verileri temizle</li>
-                <li><kbd>F1</kbd> - Bu yardım menüsü</li>
+                <li><kbd>Ctrl + S</kbd> - Mevcut çalışmayı kaydet</li>
+                <li><kbd>Esc</kbd> - Formu temizle (onay gerekir)</li>
+                <li><kbd>Alt + C</kbd> - Tüm verileri temizle (onay gerekir)</li>
+                <li><kbd>F1</kbd> - Bu yardım menüsünü göster</li>
             </ul>
-            <h5>Özellikler:</h5>
+            <h5>Özellikler</h5>
             <ul>
-                <li>Otomatik kayıt (30 saniyede bir)</li>
-                <li>Karakter sayısı takibi</li>
-                <li>Metin doğrulama</li>
-                <li>Sonuç kopyalama ve indirme</li>
+                <li>30 saniyede bir otomatik kaydetme</li>
+                <li>Gelişmiş metin doğrulama ve karakter takibi</li>
+                <li>Sonuçları panoya kopyalama ve dosya olarak indirme</li>
             </ul>
         `;
-        
-        if (typeof Utils !== 'undefined') {
-            Utils.showNotification(helpContent, 'info', 10000);
-        }
+        Utils.showNotification(helpContent, 'info', 10000);
     },
 
-    // Clear all application data
+    /**
+     * 1.6 clearAll()
+     * Formu ve LocalStorage'daki tüm uygulama verilerini (otomatik kayıt, geçmiş, ayarlar) temizler.
+     */
     clearAll: function() {
-        // Clear form
-        if (typeof ContentController !== 'undefined') {
-            ContentController.clearForm();
-        }
+        ContentController?.clearForm();
         
-        // Clear storage
-        if (typeof Utils !== 'undefined') {
-            Utils.storage.remove('autoSave');
-            Utils.storage.remove('processingHistory');
-            Utils.storage.remove('userSettings');
-        }
+        Utils.storage.remove('autoSave');
+        Utils.storage.remove('processingHistory');
+        Utils.storage.remove('userSettings'); // Bu anahtar `settings-manager` tarafından kullanılırsa
         
-        // Hide all components
-        if (typeof ResultsComponent !== 'undefined') {
-            ResultsComponent.hide();
-        }
+        ResultsComponent?.hide();
+        LoadingComponent?.hide();
         
-        if (typeof LoadingComponent !== 'undefined') {
-            LoadingComponent.hide();
-        }
-        
-        console.log('Tüm veriler temizlendi');
+        Utils.showNotification('Tüm uygulama verileri başarıyla temizlendi.', 'success');
+        console.log('Bilgi: Tüm uygulama verileri temizlendi.');
     },
 
-    // Get application status
+    /**
+     * 1.7 getStatus()
+     * Uygulamanın çeşitli modüllerinin yüklenip yüklenmediğini kontrol eder.
+     * Hata ayıklama için kullanılır.
+     * @returns {object} - Modüllerin yüklenme durumunu içeren nesne.
+     */
     getStatus: function() {
         return {
             baseLoaded: typeof Utils !== 'undefined',
             contentLoaded: typeof ContentController !== 'undefined',
-            textInputLoaded: typeof TextInputComponent !== 'undefined',
-            settingsLoaded: typeof SettingsComponent !== 'undefined',
-            resultsLoaded: typeof ResultsComponent !== 'undefined',
-            loadingLoaded: typeof LoadingComponent !== 'undefined',
+            settingsManagerLoaded: typeof window.settingsManager !== 'undefined',
+            settingsUILoaded: typeof window.settingsUI !== 'undefined',
             gsapLoaded: typeof gsap !== 'undefined'
         };
     }
 };
 
-// Global functions for backward compatibility
+// =================================================================================================
+// 2.0 Global Fonksiyonlar
+// =================================================================================================
+
+/**
+ * Geriye dönük uyumluluk veya HTML içinden kolay erişim için tanımlanmış global fonksiyonlar.
+ */
 function copyToClipboard() {
-    if (typeof ResultsComponent !== 'undefined') {
-        ResultsComponent.copyResult();
-    }
+    ResultsComponent?.copyResult();
 }
 
 function downloadText() {
-    if (typeof ResultsComponent !== 'undefined') {
-        ResultsComponent.downloadResult();
-    }
+    ResultsComponent?.downloadResult();
 }
 
-// Initialize when DOM is ready
+// =================================================================================================
+// 3.0 Global Başlatma
+// =================================================================================================
+
+/**
+ * DOM içeriği tamamen yüklendiğinde `App.init()` fonksiyonunu çağırarak uygulamayı başlatır.
+ */
 document.addEventListener('DOMContentLoaded', async function() {
     await App.init();
 });
 
-// Export for global access
+// `App` nesnesini global scope'a taşı
 window.App = App;
