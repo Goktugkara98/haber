@@ -22,6 +22,8 @@ const App = {
             }
         }
         
+        // Note: SettingsListener auto-initializes itself via DOMContentLoaded
+        
         // Initialize content controller
         if (typeof ContentController !== 'undefined') {
             ContentController.init();
@@ -40,30 +42,39 @@ const App = {
     initializeGlobalAnimations: function() {
         if (typeof gsap === 'undefined') return;
 
-        // Animate page entrance
-        gsap.from('body', {
-            duration: 0.5,
-            opacity: 0,
-            ease: 'power2.out'
-        });
+        // Animate page entrance only if body exists
+        const body = document.querySelector('body');
+        if (body) {
+            gsap.from(body, {
+                duration: 0.5,
+                opacity: 0,
+                ease: 'power2.out'
+            });
+        }
 
-        // Animate navbar
-        gsap.from('.navbar', {
-            duration: 0.8,
-            y: -50,
-            opacity: 0,
-            ease: 'power2.out',
-            delay: 0.2
-        });
+        // Animate navbar if it exists
+        const navbar = document.querySelector('.navbar');
+        if (navbar) {
+            gsap.from(navbar, {
+                duration: 0.8,
+                y: -50,
+                opacity: 0,
+                ease: 'power2.out',
+                delay: 0.2
+            });
+        }
 
-        // Animate main content
-        gsap.from('main', {
-            duration: 1,
-            y: 30,
-            opacity: 0,
-            ease: 'power2.out',
-            delay: 0.4
-        });
+        // Animate main content if it exists
+        const mainContent = document.querySelector('main');
+        if (mainContent) {
+            gsap.from(mainContent, {
+                duration: 1,
+                y: 30,
+                opacity: 0,
+                ease: 'power2.out',
+                delay: 0.4
+            });
+        }
 
         // Button hover effects
         this.initializeButtonAnimations();

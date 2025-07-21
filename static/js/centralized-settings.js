@@ -156,22 +156,41 @@ class CentralizedSettingsManager {
     }
 
     /**
-     * Update multiple settings
+     * Update multiple settings (selective update to prevent data corruption)
      */
     async updateSettings(newSettings) {
         try {
             console.log('Updating multiple settings:', newSettings);
+            console.log('Current settings before update:', this.settings);
             
-            // Update local settings
-            Object.assign(this.settings, newSettings);
+            // Selective update: only update settings that actually changed
+            const changedSettings = {};
+            const previousSettings = { ...this.settings };
+            
+            Object.keys(newSettings).forEach(key => {
+                const newValue = newSettings[key];
+                const currentValue = this.settings[key];
+                
+                // Only update if the value actually changed
+                if (newValue !== currentValue) {
+                    this.settings[key] = newValue;
+                    changedSettings[key] = newValue;
+                    console.log(`Setting ${key} changed: ${currentValue} → ${newValue}`);
+                } else {
+                    console.log(`Setting ${key} unchanged: ${currentValue}`);
+                }
+            });
+            
+            console.log('Only changed settings:', changedSettings);
+            console.log('Final settings after selective update:', this.settings);
             
             // Save to backend
             await this.saveToBackend();
             
-            // Notify all listeners
-            this.notifyListeners('update', this.settings, newSettings);
+            // Notify all listeners with only the changed settings
+            this.notifyListeners('update', this.settings, changedSettings);
             
-            console.log('Settings updated successfully');
+            console.log('Settings updated successfully (selective update)');
             
         } catch (error) {
             console.error('Failed to update settings:', error);

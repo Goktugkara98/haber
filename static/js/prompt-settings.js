@@ -417,7 +417,7 @@ class PromptSettingsManager {
     showSettingsModal() {
         // Create modal HTML
         const modalHtml = `
-            <div class="modal fade" id="settingsEditModal" tabindex="-1" aria-labelledby="settingsEditModalLabel" aria-hidden="true">
+            <div class="modal fade" id="settingsEditModal" tabindex="-1" aria-labelledby="settingsEditModalLabel" role="dialog" aria-modal="true">
                 <div class="modal-dialog modal-lg modal-dialog-scrollable">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -456,8 +456,31 @@ class PromptSettingsManager {
         // Load settings into modal
         this.loadSettingsIntoModal();
         
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('settingsEditModal'));
+        // Get modal element
+        const modalElement = document.getElementById('settingsEditModal');
+        
+        // Initialize and show modal
+        const modal = new bootstrap.Modal(modalElement);
+        
+        // Handle modal show event to manage focus
+        modalElement.addEventListener('shown.bs.modal', function () {
+            // Set focus to the first focusable element in the modal
+            const focusableElements = modalElement.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (focusableElements.length > 0) {
+                focusableElements[0].focus();
+            }
+            
+            // Remove any aria-hidden attributes that might have been added by Bootstrap
+            modalElement.removeAttribute('aria-hidden');
+        });
+        
+        // Handle modal hide event to restore focus
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            // Restore focus to the element that opened the modal
+            document.querySelector('[data-bs-toggle="modal"][data-bs-target="#settingsEditModal"]')?.focus();
+        });
+        
+        // Show the modal
         modal.show();
         
         // Bind save button
@@ -573,43 +596,98 @@ class PromptSettingsManager {
         console.log(`Updated local setting ${settingKey} to:`, value);
     }
     
+    /**
+     * Collect current settings from modal form elements
+     */
+    collectCurrentModalSettings() {
+        const settings = {};
+        const modalContainer = document.getElementById('modalSettingsContainer');
+        
+        if (!modalContainer) {
+            console.warn('Modal container not found, falling back to userSettings');
+            return this.userSettings.settings || this.userSettings;
+        }
+        
+        // Collect values from all form elements in the modal
+        const formElements = modalContainer.querySelectorAll('[data-setting]');
+        
+        formElements.forEach(element => {
+            const settingKey = element.dataset.setting;
+            const ruleType = element.dataset.ruleType;
+            let value;
+            
+            switch (ruleType) {
+                case 'toggle':
+                    value = element.checked;
+                    break;
+                case 'select':
+                    value = element.value;
+                    break;
+                case 'multiselect':
+                    value = Array.from(element.selectedOptions).map(option => option.value);
+                    break;
+                case 'number':
+                    value = parseInt(element.value) || 0;
+                    break;
+                case 'text':
+                default:
+                    value = element.value;
+                    break;
+            }
+            
+            settings[settingKey] = value;
+        });
+        
+        console.log('Collected fresh settings from modal:', settings);
+        return settings;
+    }
+    
     async saveAllModalSettings() {
         try {
-            // Get the settings data to save
-            const settingsToSave = this.userSettings.settings || this.userSettings;
+            // Collect fresh settings data from modal form elements
+            const settingsToSave = this.collectCurrentModalSettings();
             
-            console.log('Saving settings:', settingsToSave);
+            console.log('Saving settings via centralized manager:', settingsToSave);
             
-            // Save all settings to backend at once
-            const response = await fetch('/api/prompt/user-settings', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    settings: settingsToSave
-                })
-            });
+            // Use centralized settings manager instead of direct API call
+            if (window.centralizedSettings) {
+                await window.centralizedSettings.updateSettings(settingsToSave);
+                console.log('Settings saved via centralized manager - UI will update automatically');
+                
+                // Update local userSettings to stay in sync
+                this.userSettings.settings = settingsToSave;
+                
+                this.showToast('Tüm ayarlar başarıyla kaydedildi', 'success');
+            } else {
+                console.error('Centralized settings manager not available, falling back to direct API');
+                
+                // Fallback to direct API call if centralized manager is not available
+                const response = await fetch('/api/prompt/user-settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        settings: settingsToSave
+                    })
+                });
 
-            if (!response.ok) {
-                throw new Error('Failed to save settings');
-            }
+                if (!response.ok) {
+                    throw new Error('Failed to save settings');
+                }
 
-            const result = await response.json();
-            if (!result.success) {
-                throw new Error(result.error || 'Unknown error');
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.error || 'Unknown error');
+                }
+                
+                // Update the local userSettings with the saved data
+                if (result.data && result.data.settings) {
+                    this.userSettings = result.data;
+                }
+                
+                this.showToast('Ayarlar kaydedildi (fallback mode)', 'success');
             }
-            
-            // Update the local userSettings with the saved data
-            if (result.data && result.data.settings) {
-                this.userSettings = result.data;
-            }
-            
-            // Instantly update the main settings display without page reload - DISABLED to prevent cross-contamination
-            // this.updateAllSettingsDisplay();
-            console.log('updateAllSettingsDisplay disabled after save all to prevent cross-contamination');
-            
-            this.showToast('Tüm ayarlar başarıyla kaydedildi', 'success');
 
         } catch (error) {
             console.error('Error saving all settings:', error);

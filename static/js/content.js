@@ -4,35 +4,48 @@
 // Components: text-input.js, settings.js, results.js, loading.js
 
 // Content area controller
-const ContentController = {
-    // Initialize all content components
-    init: function() {
-        console.log('Content Controller başlatılıyor...');
-        
-        // Initialize components if they exist
-        if (typeof TextInputComponent !== 'undefined') {
-            TextInputComponent.init();
-        }
-        
-        if (typeof SettingsComponent !== 'undefined') {
-            SettingsComponent.init();
-        }
-        
-        if (typeof ResultsComponent !== 'undefined') {
-            ResultsComponent.init();
-        }
-        
-        if (typeof LoadingComponent !== 'undefined') {
-            LoadingComponent.init();
-        }
-        
-        if (window.PreviewModal) {
-            window.PreviewModal.init();
-        }
-        
-        this.bindEvents();
-        this.loadSavedData();
-    },
+const ContentController = (function() {
+    let isInitialized = false;
+    
+    const controller = {
+        // Initialize all content components
+        init: function() {
+            // Prevent multiple initializations
+            if (isInitialized) {
+                console.log('Content Controller already initialized, skipping...');
+                return this;
+            }
+            
+            console.log('Content Controller başlatılıyor...');
+            
+            // Initialize components if they exist
+            if (typeof TextInputComponent !== 'undefined') {
+                TextInputComponent.init();
+            }
+            
+            if (typeof SettingsComponent !== 'undefined') {
+                SettingsComponent.init();
+            }
+            
+            if (typeof ResultsComponent !== 'undefined') {
+                ResultsComponent.init();
+            }
+            
+            if (typeof LoadingComponent !== 'undefined') {
+                LoadingComponent.init();
+            }
+            
+            if (window.PreviewModal && !window.PreviewModal.isInitialized) {
+                window.PreviewModal.init();
+            }
+            
+            this.bindEvents();
+            this.loadSavedData();
+            
+            isInitialized = true;
+            console.log('Content Controller başlatıldı');
+            return this;
+        },
 
     // Bind global content events
     bindEvents: function() {
@@ -264,16 +277,24 @@ const ContentController = {
         Utils.showNotification('Form temizlendi', 'info');
     },
 
-    // Get processing history
-    getHistory: function() {
-        return Utils.storage.get('processingHistory', []);
-    }
-};
+        // Get processing history
+        getHistory: function() {
+            return Utils.storage.get('processingHistory', []);
+        }
+    };
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    ContentController.init();
-});
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            controller.init();
+        });
+    } else {
+        // DOMContentLoaded has already fired
+        setTimeout(() => controller.init(), 0);
+    }
+
+    return controller;
+})();
 
 // Export for global access
 window.ContentController = ContentController;
