@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/tooltips.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/loading.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/settings-summary.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/settings.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/preview-modal.css') }}">
     
     {% block extra_css %}{% endblock %}
@@ -85,32 +85,26 @@
     <!-- GSAP -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     
-    <!-- Modular JavaScript Files -->
     <!-- Base utilities (must load first) -->
     <script src="{{ url_for('static', filename='js/base.js') }}"></script>
     
-    <!-- Centralized Settings Manager (must load early) -->
-    <script src="{{ url_for('static', filename='js/centralized-settings.js') }}"></script>
-    
-    <!-- Component modules -->
+    <!-- New Settings System -->
+    <script src="{{ url_for('static', filename='js/settings-config.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/settings-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/settings-ui.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/navbar.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/tooltips.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/main-content.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/text-input.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/components/settings.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/results.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/loading.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/preview-modal.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/components/settings-listener.js') }}"></script>
-    
-    <!-- Prompt Settings Manager -->
-    <script src="{{ url_for('static', filename='js/prompt-settings.js') }}"></script>
     
     <!-- Content controller -->
     <script src="{{ url_for('static', filename='js/content.js') }}"></script>
     
-    <!-- Main application (must load last) -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <!-- Application Initialization (must load last) -->
+    <script src="{{ url_for('static', filename='js/app-init.js') }}"></script>
     
     {% block extra_js %}{% endblock %}
 </body>

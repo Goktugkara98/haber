@@ -147,22 +147,25 @@ INSERT INTO prompt_sections (config_id, section_key, section_name, section_descr
 (@default_config_id, 'muhtemel_kategori', 'Kategori Belirleme Kuralları', 'Kategori seçimi ve belirleme kuralları', 'Verilen kategori listesinden en uygun olanı seç: Asayiş, Gündem, Ekonomi, Siyaset, Spor, Teknoloji, Sağlık, Yaşam, Eğitim, Dünya, Kültür & Sanat, Magazin, Genel', 8),
 (@default_config_id, 'etiketler', 'Etiket Oluşturma ve SEO Kuralları', 'Etiket oluşturma ve SEO kuralları', 'Haberle ilgili, SEO uyumlu 5 adet etiket oluştur ve bunları bir dizi (array) olarak listele.', 9);
 
--- Insert default prompt rules
+-- Insert default prompt rules (updated to match frontend config - 2025-07-21)
 INSERT INTO prompt_rules (config_id, rule_key, rule_name, rule_type, rule_category, default_value, validation_rules, display_order) VALUES
-(@default_config_id, 'targetCategory', 'Hedef Kategori', 'select', 'general', 'auto', '{"required": true}', 1),
-(@default_config_id, 'writingStyle', 'Yazım Stili', 'select', 'general', 'formal', '{"required": true}', 2),
-(@default_config_id, 'titleCityInfo', 'Başlıkta Şehir Bilgisi', 'select', 'content', 'exclude', '{"required": true}', 3),
-(@default_config_id, 'nameCensorship', 'İsim Sansürleme', 'select', 'content', 'initials', '{"required": true}', 4),
-(@default_config_id, 'removeCompanyInfo', 'Şirket Bilgilerini Kaldır', 'toggle', 'content', 'false', '{}', 5),
-(@default_config_id, 'removePlateInfo', 'Plaka Bilgilerini Kaldır', 'toggle', 'content', 'false', '{}', 6),
-(@default_config_id, 'outputFormat', 'Çıktı Formatı', 'select', 'output', 'json', '{"required": true}', 7),
-(@default_config_id, 'tagCount', 'Etiket Sayısı', 'select', 'output', '5', '{"required": true, "min": 1, "max": 10}', 8),
-(@default_config_id, 'customInstructions', 'Özel Talimatlar', 'text', 'output', '', '{"maxLength": 500}', 9);
+(@default_config_id, 'newsType', 'Haber Çeşidi', 'select', 'content', 'comprehensive', '{"required": true}', 1),
+(@default_config_id, 'targetCategory', 'Hedef Kategori', 'select', 'content', 'auto', '{"required": true}', 2),
+(@default_config_id, 'titleCityInfo', 'Başlıkta Şehir Bilgisi', 'select', 'content', 'False', '{"required": true}', 3),
+(@default_config_id, 'removeCompanyInfo', 'Şirket Bilgisi Kaldır', 'select', 'privacy', 'True', '{"required": true}', 4),
+(@default_config_id, 'removePlateInfo', 'Plaka Bilgisi Kaldır', 'select', 'privacy', 'True', '{"required": true}', 5),
+(@default_config_id, 'tagCount', 'Etiket Sayısı', 'select', 'content', '5', '{"required": true, "min": 1, "max": 10}', 6),
+(@default_config_id, 'customInstructions', 'Özel Talimatlar', 'text', 'content', '', '{"maxLength": 1000}', 7),
+(@default_config_id, 'outputFormat', 'Çıktı Formatı', 'select', 'format', 'json', '{"required": true}', 8);
 
--- Insert rule options
+-- Insert rule options (updated to match frontend config - 2025-07-21)
 INSERT INTO prompt_rule_options (rule_id, option_key, option_label, option_description, display_order) VALUES
+-- News Type options
+((SELECT id FROM prompt_rules WHERE rule_key = 'newsType' AND config_id = @default_config_id), 'social', 'Sosyal Medya Haberi', 'Sosyal medya için optimize edilmiş haber formatı', 1),
+((SELECT id FROM prompt_rules WHERE rule_key = 'newsType' AND config_id = @default_config_id), 'comprehensive', 'Kapsamlı Haber', 'Detaylı ve kapsamlı haber formatı', 2),
+
 -- Target Category options
-((SELECT id FROM prompt_rules WHERE rule_key = 'targetCategory' AND config_id = @default_config_id), 'auto', 'Otomatik Belirleme', 'AI otomatik olarak kategori belirler', 1),
+((SELECT id FROM prompt_rules WHERE rule_key = 'targetCategory' AND config_id = @default_config_id), 'auto', 'Otomatik Seç', 'AI otomatik olarak kategori belirler', 1),
 ((SELECT id FROM prompt_rules WHERE rule_key = 'targetCategory' AND config_id = @default_config_id), 'Asayiş', 'Asayiş', 'Güvenlik ve asayiş haberleri', 2),
 ((SELECT id FROM prompt_rules WHERE rule_key = 'targetCategory' AND config_id = @default_config_id), 'Gündem', 'Gündem', 'Güncel olaylar ve haberler', 3),
 ((SELECT id FROM prompt_rules WHERE rule_key = 'targetCategory' AND config_id = @default_config_id), 'Ekonomi', 'Ekonomi', 'Ekonomi ve finans haberleri', 4),
@@ -177,27 +180,24 @@ INSERT INTO prompt_rule_options (rule_id, option_key, option_label, option_descr
 ((SELECT id FROM prompt_rules WHERE rule_key = 'targetCategory' AND config_id = @default_config_id), 'Magazin', 'Magazin', 'Magazin ve eğlence haberleri', 13),
 ((SELECT id FROM prompt_rules WHERE rule_key = 'targetCategory' AND config_id = @default_config_id), 'Genel', 'Genel', 'Genel kategoriye giren haberler', 14),
 
--- Writing Style options
-((SELECT id FROM prompt_rules WHERE rule_key = 'writingStyle' AND config_id = @default_config_id), 'formal', 'Resmi', 'Resmi ve kurumsal dil', 1),
-((SELECT id FROM prompt_rules WHERE rule_key = 'writingStyle' AND config_id = @default_config_id), 'semiformal', 'Yarı Resmi', 'Yarı resmi ve erişilebilir dil', 2),
-((SELECT id FROM prompt_rules WHERE rule_key = 'writingStyle' AND config_id = @default_config_id), 'neutral', 'Nötr', 'Nötr ve objektif dil', 3),
-
 -- Title City Info options
-((SELECT id FROM prompt_rules WHERE rule_key = 'titleCityInfo' AND config_id = @default_config_id), 'exclude', 'İçermesin', 'Başlıkta şehir bilgisi yer almasın', 1),
-((SELECT id FROM prompt_rules WHERE rule_key = 'titleCityInfo' AND config_id = @default_config_id), 'include', 'İçersin', 'Başlıkta şehir bilgisi yer alsın', 2),
+((SELECT id FROM prompt_rules WHERE rule_key = 'titleCityInfo' AND config_id = @default_config_id), 'False', 'Hayır', 'Başlıkta şehir bilgisi yer almasın', 1),
+((SELECT id FROM prompt_rules WHERE rule_key = 'titleCityInfo' AND config_id = @default_config_id), 'True', 'Evet', 'Başlıkta şehir bilgisi yer alsın', 2),
 
--- Name Censorship options
-((SELECT id FROM prompt_rules WHERE rule_key = 'nameCensorship' AND config_id = @default_config_id), 'initials', 'G.K. (İlk harfler)', 'Sadece ilk harfler gösterilsin', 1),
-((SELECT id FROM prompt_rules WHERE rule_key = 'nameCensorship' AND config_id = @default_config_id), 'partial', 'Göktuğ K. (İsim + Soyisim baş harfi)', 'İsim tam, soyisim baş harfi', 2),
-((SELECT id FROM prompt_rules WHERE rule_key = 'nameCensorship' AND config_id = @default_config_id), 'none', 'Sansürsüz', 'İsimler tam olarak gösterilsin', 3),
+-- Remove Company Info options
+((SELECT id FROM prompt_rules WHERE rule_key = 'removeCompanyInfo' AND config_id = @default_config_id), 'True', 'Evet', 'Şirket bilgilerini kaldır', 1),
+((SELECT id FROM prompt_rules WHERE rule_key = 'removeCompanyInfo' AND config_id = @default_config_id), 'False', 'Hayır', 'Şirket bilgilerini kaldırma', 2),
 
--- Output Format options
-((SELECT id FROM prompt_rules WHERE rule_key = 'outputFormat' AND config_id = @default_config_id), 'json', 'JSON', 'JSON formatında çıktı', 1),
-((SELECT id FROM prompt_rules WHERE rule_key = 'outputFormat' AND config_id = @default_config_id), 'text', 'Metin', 'Düz metin formatında çıktı', 2),
-((SELECT id FROM prompt_rules WHERE rule_key = 'outputFormat' AND config_id = @default_config_id), 'html', 'HTML', 'HTML formatında çıktı', 3),
+-- Remove Plate Info options
+((SELECT id FROM prompt_rules WHERE rule_key = 'removePlateInfo' AND config_id = @default_config_id), 'True', 'Evet', 'Plaka bilgilerini kaldır', 1),
+((SELECT id FROM prompt_rules WHERE rule_key = 'removePlateInfo' AND config_id = @default_config_id), 'False', 'Hayır', 'Plaka bilgilerini kaldırma', 2),
 
 -- Tag Count options
 ((SELECT id FROM prompt_rules WHERE rule_key = 'tagCount' AND config_id = @default_config_id), '3', '3 Etiket', '3 adet etiket oluştur', 1),
 ((SELECT id FROM prompt_rules WHERE rule_key = 'tagCount' AND config_id = @default_config_id), '5', '5 Etiket', '5 adet etiket oluştur', 2),
 ((SELECT id FROM prompt_rules WHERE rule_key = 'tagCount' AND config_id = @default_config_id), '7', '7 Etiket', '7 adet etiket oluştur', 3),
-((SELECT id FROM prompt_rules WHERE rule_key = 'tagCount' AND config_id = @default_config_id), '10', '10 Etiket', '10 adet etiket oluştur', 4);
+
+-- Output Format options
+((SELECT id FROM prompt_rules WHERE rule_key = 'outputFormat' AND config_id = @default_config_id), 'json', 'JSON', 'JSON formatında çıktı', 1),
+((SELECT id FROM prompt_rules WHERE rule_key = 'outputFormat' AND config_id = @default_config_id), 'text', 'Metin', 'Düz metin formatında çıktı', 2),
+((SELECT id FROM prompt_rules WHERE rule_key = 'outputFormat' AND config_id = @default_config_id), 'markdown', 'Markdown', 'Markdown formatında çıktı', 3);

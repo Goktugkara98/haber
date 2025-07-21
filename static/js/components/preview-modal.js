@@ -20,10 +20,21 @@ const PreviewModal = {
         
         // Close buttons
         const closeBtn = document.querySelector('#previewModal .btn-close');
-        const cancelBtn = document.querySelector('#previewModal .btn-secondary');
+        const cancelBtn = document.querySelector('#previewModal .btn-outline-secondary');
         
-        if (closeBtn) closeBtn.addEventListener('click', () => this.hide());
-        if (cancelBtn) cancelBtn.addEventListener('click', () => this.hide());
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.hide();
+            });
+        }
+        
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.hide();
+            });
+        }
         
         // ESC key
         document.addEventListener('keydown', (e) => {
@@ -35,40 +46,80 @@ const PreviewModal = {
     
     async show(newsText) {
         try {
-            console.log('=== PREVIEW MODAL DEBUG START ===');
+            console.log('=== PREVIEW MODAL DEBUG ===');
             console.log('Showing preview modal with text:', newsText.substring(0, 50) + '...');
             
             // Show loading state
             this.showLoading();
             
-            // Get current settings asynchronously
-            console.log('About to get current settings...');
-            const settings = await this.getCurrentSettings();
-            console.log('=== SETTINGS RECEIVED IN PREVIEW MODAL ===');
-            console.log('Full settings object:', JSON.stringify(settings, null, 2));
-            console.log('nameCensorship specifically:', settings.nameCensorship);
-            console.log('typeof nameCensorship:', typeof settings.nameCensorship);
-            
-            // Build prompt
-            console.log('Building prompt with these settings...');
-            const prompt = this.buildPrompt(newsText, settings);
-            console.log('Built prompt length:', prompt.length);
-            
-            // Update modal content
-            this.updateContent(settings, prompt);
-            
-            // Show modal
+            // Show the modal immediately with loading state
             this.showModal();
             
-            // Hide loading state
-            this.hideLoading();
-            
-            console.log('=== PREVIEW MODAL DEBUG END ===');
-            
+            try {
+                // Get current settings asynchronously with timeout
+                console.log('About to get current settings...');
+                const settings = await Promise.race([
+                    this.getCurrentSettings(),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Settings load timeout')), 5000)
+                    )
+                ]);
+                
+                console.log('=== SETTINGS RECEIVED IN PREVIEW MODAL ===');
+                console.log('Full settings object:', JSON.stringify(settings, null, 2));
+                
+                // Fetch complete prompt from backend
+                console.log('Fetching complete prompt from backend...');
+                const response = await fetch('/api/prompt/build-complete-prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        newsText: newsText,
+                        settings: settings
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.message || 'Failed to generate prompt');
+                }
+                
+                const completePrompt = result.data.completePrompt;
+                console.log('Received complete prompt from backend, length:', completePrompt.length);
+                
+                // Update modal with complete prompt
+                this.updateContent(settings, completePrompt);
+                
+                // Hide loading state
+                this.hideLoading();
+                
+                console.log('=== PREVIEW MODAL DEBUG END ===');
+                
+            } catch (error) {
+                console.warn('Error fetching complete prompt, falling back to frontend generation:', error);
+                // Fallback to frontend generation if backend fails
+                try {
+                    const settings = await this.getCurrentSettings();
+                    const prompt = this.buildPrompt(newsText, settings);
+                    this.updateContent(settings, prompt);
+                } catch (fallbackError) {
+                    console.error('Fallback prompt generation failed:', fallbackError);
+                    throw error; // Re-throw original error
+                }
+                this.hideLoading();
+            }
         } catch (error) {
-            console.error('Error showing preview modal:', error);
+            console.error('Error in PreviewModal.show:', error);
             this.hideLoading();
-            alert('Önizleme yüklenirken hata oluştu: ' + (error.message || 'Bilinmeyen hata'));
+            // Show error to user
+            alert('Önizleme yüklenirken bir hata oluştu: ' + (error.message || 'Bilinmeyen hata'));
         }
     },
     
@@ -76,28 +127,23 @@ const PreviewModal = {
         try {
             console.log('=== GETTING CURRENT SETTINGS FROM CENTRALIZED MANAGER ===');
             
-            // Use centralized settings manager
+            // First try to use the new unified settings manager
+            if (window.unifiedSettingsManager && window.unifiedSettingsManager.isReady()) {
+                const settings = window.unifiedSettingsManager.getSettings();
+                console.log('Settings from unified settings manager:', JSON.stringify(settings, null, 2));
+                return settings;
+            }
+            
+            // Fallback to legacy centralized settings manager
             if (window.centralizedSettings && window.centralizedSettings.isReady()) {
                 const settings = window.centralizedSettings.getSettings();
-                console.log('Settings from centralized manager:', JSON.stringify(settings, null, 2));
+                console.log('Settings from legacy centralized manager:', JSON.stringify(settings, null, 2));
                 return settings;
-            } else {
-                console.warn('Centralized settings manager not ready, waiting...');
-                
-                // Wait for centralized settings to be ready
-                return new Promise((resolve) => {
-                    const checkReady = () => {
-                        if (window.centralizedSettings && window.centralizedSettings.isReady()) {
-                            const settings = window.centralizedSettings.getSettings();
-                            console.log('Settings from centralized manager (after wait):', JSON.stringify(settings, null, 2));
-                            resolve(settings);
-                        } else {
-                            setTimeout(checkReady, 100);
-                        }
-                    };
-                    checkReady();
-                });
             }
+            
+            // If neither manager is ready, use defaults
+            console.warn('No settings manager ready, using defaults');
+            return this.getDefaultSettings();
             
         } catch (error) {
             console.error('Error getting current settings from centralized manager:', error);
@@ -512,11 +558,13 @@ ${newsText}`;
                 return 'İsimleri tamamen sansürle (örn: A.B.)';
             case 'partial':
                 return 'İsimleri kısmi sansürle (örn: Ahmet K.)';
+            case 'initials':
+                return 'Sadece baş harfleri kullan (örn: A.K.)';
             case 'none':
-                return '';
+                return 'İsimleri olduğu gibi göster';
             default:
                 console.warn('Unknown nameCensorship value:', nameCensorship, 'defaulting to none');
-                return '';
+                return 'İsimleri olduğu gibi göster';
         }
     },
     
@@ -540,11 +588,48 @@ ${newsText}`;
     },
     
     updateContent(settings, prompt) {
-        // Update prompt display only
-        const promptContainer = document.getElementById('promptDisplay');
+        console.log('Updating preview content with prompt');
+        
+        // Update prompt display
+        const promptContainer = document.querySelector('#promptDisplay');
         if (promptContainer) {
-            promptContainer.textContent = prompt;
+            try {
+                // Format the prompt with syntax highlighting
+                promptContainer.innerHTML = `
+                    <div class="prompt-content-inner">
+                        <pre><code class="language-python">${this.escapeHtml(prompt)}</code></pre>
+                    </div>
+                `;
+                
+                // Apply syntax highlighting if Prism is available
+                const codeElement = promptContainer.querySelector('code');
+                if (window.Prism && codeElement) {
+                    Prism.highlightElement(codeElement);
+                }
+                
+                console.log('Prompt display updated successfully');
+            } catch (error) {
+                console.error('Error updating prompt display:', error);
+                promptContainer.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Prompt gösterilirken bir hata oluştu.
+                    </div>
+                `;
+            }
+        } else {
+            console.error('Prompt container not found');
         }
+    },
+    
+    // Helper to escape HTML for safe display
+    escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     },
     
     showModal() {

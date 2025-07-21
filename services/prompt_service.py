@@ -4,6 +4,7 @@ Handles database operations for prompt settings and configurations
 """
 
 import json
+import os
 from datetime import datetime
 from database.connection import DatabaseConnection
 
@@ -11,6 +12,30 @@ from database.connection import DatabaseConnection
 class PromptService:
     def __init__(self):
         self.db = DatabaseConnection()
+        self.prompt_templates = self._load_prompt_templates()
+    
+    def _load_prompt_templates(self):
+        """Load prompt templates from config file"""
+        try:
+            config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'prompt_templates.json')
+            with open(config_path, 'r', encoding='utf-8') as f:
+                templates = json.load(f)
+            print(f"DEBUG: Loaded prompt templates from {config_path}")
+            return templates
+        except Exception as e:
+            print(f"Error loading prompt templates: {e}")
+            return self._get_default_templates()
+    
+    def _get_default_templates(self):
+        """Fallback default templates if config file is not available"""
+        return {
+            "task_definition": {
+                "text": "Sen, kurumsal bir gazetenin web sitesi için içerik üreten profesyonel bir yapay zeka editörüsün."
+            },
+            "final_instruction": {
+                "text": "Yukarıdaki kurallara göre bu haber metnini işle ve sadece JSON formatında çıktı ver:"
+            }
+        }
     
     def get_active_config(self):
         """Get the active prompt configuration"""
@@ -219,6 +244,18 @@ class PromptService:
             news_content = self._build_news_content(news_text)
             final_instruction = self._build_final_instruction()
             
+            # Collect all parts
+            prompt_parts = [
+                task_definition,
+                writing_rules,
+                output_requirements,
+                category_list,
+                output_format,
+                custom_instructions,
+                news_content,
+                final_instruction
+            ]
+            
             # Filter out empty parts and join
             prompt = '\n\n'.join([part for part in prompt_parts if part.strip()])
             
@@ -230,18 +267,24 @@ class PromptService:
             return None
     
     def _build_task_definition(self):
-        """Build task definition section"""
-        return """GÖREV TANIMI:
-Sen, kurumsal bir gazetenin web sitesi için içerik üreten profesyonel bir yapay zeka editörüsün. Görevin, sana verilen orijinal haber metnini aşağıdaki kurallara göre işleyerek, belirtilen JSON formatında profesyonel ve özgün bir haber içeriği oluşturmaktır."""
+        """Build task definition section from config"""
+        task_text = self.prompt_templates.get('task_definition', {}).get('text', 'Varsayılan görev tanımı')
+        return f"GÖREV TANIMI:\n{task_text}"
     
     def _build_writing_rules(self, user_settings):
-        """Build writing rules section based on user settings"""
-        writing_style = user_settings.get('writingStyle', 'formal')
-        
+        """Build writing rules section from configurable templates"""
         rules = "KURALLAR:\n"
-        rules += "• ÖZGÜNLÜK: Metin tamamen yeniden yazılmalı, kopya olmamalıdır. Ancak orijinal haberdeki tüm temel bilgiler, veriler, isimler ve tarihler korunmalıdır.\n"
-        rules += f"• KURUMSAL DİL: {self._get_writing_style_rule(writing_style)}\n"
-        rules += "• ÇIKTININ FORMATI: Çıktı, yalnızca ve yalnızca aşağıda belirtilen JSON yapısına uygun olmalıdır. Cevabına asla açıklama veya ek metin ekleme, sadece JSON çıktısı ver.\n"
+        
+        # Get rules from templates
+        writing_rules = self.prompt_templates.get('writing_rules', {})
+        
+        # Add each rule from config
+        if 'originality' in writing_rules:
+            rules += writing_rules['originality'] + "\n"
+        if 'corporate_language' in writing_rules:
+            rules += writing_rules['corporate_language'] + "\n"
+        if 'output_format' in writing_rules:
+            rules += writing_rules['output_format'] + "\n"
         
         return rules
     
@@ -267,76 +310,81 @@ Sen, kurumsal bir gazetenin web sitesi için içerik üreten profesyonel bir yap
         return requirements
     
     def _build_title_requirements(self, user_settings):
-        """Build title requirements based on city info setting"""
-        title_city_info = user_settings.get('titleCityInfo', 'exclude')
+        """Build title requirements based on city info setting from configurable templates"""
+        title_city_info = user_settings.get('titleCityInfo', 'False')
+        print(f"DEBUG: Title city info setting: {title_city_info}")
         
-        title_req = "• ETKİLİ BAŞLIK: Haberi net yansıtan, profesyonel, dikkat çekici, yanıltıcı olmayan"
+        title_templates = self.prompt_templates.get('title_requirements', {})
         
-        if title_city_info == 'exclude':
-            title_req += ", şehir bilgisi içermeyen"
-            print("DEBUG: Title will exclude city info")
-        elif title_city_info == 'include':
-            title_req += ", şehir bilgisi içeren"
-            print("DEBUG: Title will include city info")
+        if title_city_info == 'True' or title_city_info is True:
+            print("DEBUG: Including city info in title")
+            return title_templates.get('with_city', '• ETKİLİ BAŞLIK: Şehir bilgisi içeren başlık.') + "\n"
         else:
-            print("DEBUG: Title city info setting is auto/default")
-        
-        title_req += " bir başlık.\n"
-        return title_req
+            print("DEBUG: Excluding city info from title")
+            return title_templates.get('without_city', '• ETKİLİ BAŞLIK: Şehir bilgisi içermeyen başlık.') + "\n"
     
     def _build_summary_requirements(self, user_settings):
-        """Build summary requirements"""
-        return "• HABER ÖZETİ: Haberin en önemli noktalarını içeren, 2-3 cümlelik, şehir bilgisi içeren kısa bir özet.\n"
+        """Build summary requirements from configurable templates"""
+        summary_template = self.prompt_templates.get('summary_requirements', {}).get('default', '• HABER ÖZETİ: Kısa özet.')
+        return summary_template + "\n"
     
     def _build_content_requirements(self, user_settings):
-        """Build content requirements based on multiple settings"""
-        content_req = "• ÖZGÜN HABER METNİ: Tüm bilgileri koruyarak, metni özgün cümlelerle baştan yaz"
+        """Build content requirements based on multiple settings from configurable templates"""
+        content_templates = self.prompt_templates.get('content_requirements', {})
         
-        # Name censorship rule - modular
-        name_censorship = user_settings.get('nameCensorship', 'partial')
-        name_censorship_text = self._get_name_censorship_text(name_censorship)
-        if name_censorship_text:
-            content_req += f". {name_censorship_text}"
-            print(f"DEBUG: Name censorship rule applied: {name_censorship}")
+        # News type affects content structure
+        news_type = user_settings.get('newsType', 'comprehensive')
         
-        # Company info removal - modular
-        remove_company_info = user_settings.get('removeCompanyInfo', True)
-        if remove_company_info:
-            content_req += ". Özel şirket bilgilerini metinden çıkar"
+        if news_type == 'social':
+            content_req = content_templates.get('social_media', '• ÖZGÜN HABER METNİ: Sosyal medya formatı')
+            print("DEBUG: Using social media optimized content format")
+        else:
+            content_req = content_templates.get('comprehensive', '• ÖZGÜN HABER METNİ: Kapsamlı format')
+            print("DEBUG: Using comprehensive news format")
+        
+        # Company info removal - updated to match frontend boolean values
+        remove_company_info = user_settings.get('removeCompanyInfo', 'True')
+        if remove_company_info == 'True' or remove_company_info is True:
+            content_req += content_templates.get('company_removal', '. Şirket bilgisi kaldır')
             print("DEBUG: Company info removal enabled")
         
-        # Plate info removal - modular
-        remove_plate_info = user_settings.get('removePlateInfo', True)
-        if remove_plate_info:
-            content_req += ". Plaka bilgilerini metinden çıkar"
+        # Plate info removal - updated to match frontend boolean values
+        remove_plate_info = user_settings.get('removePlateInfo', 'True')
+        if remove_plate_info == 'True' or remove_plate_info is True:
+            content_req += content_templates.get('plate_removal', '. Plaka bilgisi kaldır')
             print("DEBUG: Plate info removal enabled")
         
         content_req += ".\n"
         return content_req
     
     def _build_category_requirements(self, user_settings):
-        """Build category requirements - fully modular"""
+        """Build category requirements from configurable templates with automatic vs specific branching"""
         target_category = user_settings.get('targetCategory')
         print(f"DEBUG: target_category from settings: {target_category}")
+        
+        category_templates = self.prompt_templates.get('category_requirements', {})
         
         if target_category and target_category != 'auto' and target_category.strip():
             # User has selected a specific category
             category_name = self._get_category_display_name(target_category)
-            category_req = f"• MUHTEMEL KATEGORİ: Mümkünse \"{category_name}\" kategorisini tercih et, uygun değilse en uygun kategoriyi seç.\n"
+            template = category_templates.get('specific', '• MUHTEMEL KATEGORİ: "{category_name}" kategorisini tercih et.')
+            category_req = template.format(category_name=category_name) + "\n"
             print(f"DEBUG: Using specific category preference: {category_name}")
         else:
             # User wants automatic category selection
-            category_req = "• MUHTEMEL KATEGORİ: Verilen kategori listesinden en uygun olanı seç.\n"
+            template = category_templates.get('automatic', '• MUHTEMEL KATEGORİ: Otomatik kategori seçimi.')
+            category_req = template + "\n"
             print("DEBUG: Using automatic category selection")
         
         return category_req
     
     def _build_tags_requirements(self, user_settings):
-        """Build tags requirements based on tag count"""
+        """Build tags requirements based on tag count from configurable templates"""
         tag_count = user_settings.get('tagCount', 5)
         print(f"DEBUG: Tag count setting: {tag_count}")
         
-        return f"• ETİKETLER: Haberle ilgili, SEO uyumlu {tag_count} adet etiket oluştur ve bunları bir dizi (array) olarak listele.\n"
+        tags_template = self.prompt_templates.get('tags_requirements', {}).get('template', '• ETİKETLER: {tag_count} adet etiket oluştur.')
+        return tags_template.format(tag_count=tag_count) + "\n"
     
     def _build_category_list(self, user_settings=None):
         """Build category list section - dynamic based on selection"""
@@ -426,91 +474,9 @@ ETİKETLER: [etiketler]"""
         return ""
     
     def _build_final_instruction(self):
-        """Build final instruction section"""
-        return "Yukarıdaki kurallara göre bu haber metnini işle ve sadece JSON formatında çıktı ver:"
-    
-    def _get_writing_style_rule(self, writing_style):
-        """Get writing style rule text - modular and distinctive"""
-        print(f"DEBUG: Writing style setting: {writing_style}")
-        
-        if writing_style == 'formal':
-            print("DEBUG: Using FORMAL writing style")
-            return '[FORMAL YAZIM STİLİ] Kullanılacak dil resmi, profesyonel ve bilgilendirici olmalıdır. Argo veya clickbait ifadelerden kaçınılmalıdır.'
-        elif writing_style == 'informal':
-            print("DEBUG: Using INFORMAL writing style")
-            return '[SAMIMİ YAZIM STİLİ] Kullanılacak dil samimi, sıcak ve anlaşılır olmalıdır. Okuyucuyla yakın bir bağ kurmalı, ancak yine de profesyonel kalmalıdır.'
-        elif writing_style == 'neutral':
-            print("DEBUG: Using NEUTRAL writing style")
-            return '[NÖTR YAZIM STİLİ] Kullanılacak dil tamamen nötr, objektif ve duygusal yüklenmeden uzak bilgilendirici olmalıdır. Sadece gerçekleri aktarmalıdır.'
-        else:
-            print(f"DEBUG: Unknown writing style '{writing_style}', using default FORMAL")
-            return '[VARSAYILAN FORMAL YAZIM STİLİ] Kullanılacak dil resmi, profesyonel ve bilgilendirici olmalıdır. Argo veya clickbait ifadelerden kaçınılmalıdır.'
-    
-    def _build_output_requirements(self, user_settings):
-        """Build dynamic output requirements based on user settings"""
-        requirements = 'İSTENEN ÇIKTILAR:\n'
-        
-        # Title requirements
-        title_req = '• ETKİLİ BAŞLIK: Haberi net yansıtan, profesyonel, dikkat çekici, yanıltıcı olmayan'
-        if user_settings.get('titleCityInfo') == 'exclude':
-            title_req += ', şehir bilgisi içermeyen'
-        elif user_settings.get('titleCityInfo') == 'include':
-            title_req += ', şehir bilgisi içeren'
-        title_req += ' bir başlık.\n'
-        requirements += title_req
-        
-        # Summary requirements
-        requirements += '• HABER ÖZETİ: Haberin en önemli noktalarını içeren, 2-3 cümlelik, şehir bilgisi içeren kısa bir özet.\n'
-        
-        # Content requirements
-        content_req = '• ÖZGÜN HABER METNİ: Tüm bilgileri koruyarak, metni özgün cümlelerle baştan yaz'
-        
-        # Add name censorship rule
-        name_censorship_text = self._get_name_censorship_text(user_settings.get('nameCensorship', 'partial'))
-        if name_censorship_text:
-            content_req += '. ' + name_censorship_text
-        
-        # Add company info rule
-        if user_settings.get('removeCompanyInfo'):
-            content_req += '. Özel şirket bilgilerini metinden çıkar'
-        
-        # Add plate info rule
-        if user_settings.get('removePlateInfo'):
-            content_req += '. Plaka bilgilerini metinden çıkar'
-        
-        content_req += '.\n'
-        requirements += content_req
-        
-        # Category requirements - modular and precise
-        target_category = user_settings.get('targetCategory')
-        print(f"DEBUG: target_category from settings: {target_category}")
-        
-        if target_category and target_category != 'auto' and target_category.strip():
-            # User has selected a specific category
-            category_name = self._get_category_display_name(target_category)
-            requirements += f'• MUHTEMEL KATEGORİ: Mümkünse "{category_name}" kategorisini tercih et, uygun değilse en uygun kategoriyi seç.\n'
-            print(f"DEBUG: Using specific category preference: {category_name}")
-        else:
-            # User wants automatic category selection
-            requirements += '• MUHTEMEL KATEGORİ: Verilen kategori listesinden en uygun olanı seç.\n'
-            print("DEBUG: Using automatic category selection")
-        
-        # Tags requirements
-        tag_count = user_settings.get('tagCount', 5)
-        requirements += f'• ETİKETLER: Haberle ilgili, SEO uyumlu {tag_count} adet etiket oluştur ve bunları bir dizi (array) olarak listele.\n'
-        
-        return requirements
-    
-    def _get_name_censorship_text(self, name_censorship):
-        """Get name censorship rule text"""
-        if name_censorship == 'full':
-            return 'İsimleri tamamen sansürle (örn: A.B.)'
-        elif name_censorship == 'partial':
-            return 'İsimleri kısmi sansürle (örn: Ahmet K.)'
-        elif name_censorship == 'none':
-            return ''
-        else:
-            return 'İsimleri sansürle (örn: A.B.)'
+        """Build final instruction section from configurable templates"""
+        final_text = self.prompt_templates.get('final_instruction', {}).get('text', 'JSON formatında çıktı ver:')
+        return final_text
     
     def _get_category_display_name(self, category):
         """Get display name for category"""
