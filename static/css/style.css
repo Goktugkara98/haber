@@ -22,4 +22,35 @@
 }
 .modal-backdrop {
   z-index: 1040 !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Ensure modal dialog is above the backdrop */
+.modal-dialog {
+  z-index: 1055 !important;
+  position: relative;
+}
+
+/* Fix for modal stacking context */
+.modal.show {
+  display: block;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Ensure the modal content is above the backdrop */
+.modal-content {
+  position: relative;
+  z-index: 1056;
+}
+
+/* Fix for modal body scrolling */
+.modal-body {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
 }

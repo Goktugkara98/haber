@@ -36,6 +36,7 @@ class SettingsUI {
      */
     constructor() {
         this.isInitialized = false;
+        this.modal = null; // Store the modal instance
         console.log('Bilgi: SettingsUI örneği oluşturuldu.');
     }
 
@@ -229,7 +230,70 @@ class SettingsUI {
      */
     showModal() {
         const modalEl = document.getElementById('settingsModal');
-        if (modalEl) new bootstrap.Modal(modalEl).show();
+        if (!modalEl) return;
+        
+        // First, completely remove any existing modal instances and backdrops
+        const existingModal = bootstrap.Modal.getInstance(modalEl);
+        if (existingModal) {
+            existingModal.dispose();
+        }
+        
+        // Remove any existing backdrops manually
+        const existingBackdrops = document.querySelectorAll('.modal-backdrop');
+        existingBackdrops.forEach(backdrop => {
+            backdrop.parentNode?.removeChild(backdrop);
+        });
+        
+        // Reset body classes and styles
+        document.body.classList.remove('modal-open');
+        document.body.style.paddingRight = '';
+        document.body.style.overflow = '';
+        
+        // Create new modal instance with explicit options
+        this.modal = new bootstrap.Modal(modalEl, {
+            backdrop: 'static', // Use 'static' to prevent closing when clicking outside
+            keyboard: true,     // Allow closing with ESC key
+            focus: true        // Focus the modal when shown
+        });
+        
+        // Remove any existing event listeners to prevent duplicates
+        const modalElement = modalEl;
+        const clonedModalElement = modalElement.cloneNode(true);
+        modalElement.parentNode?.replaceChild(clonedModalElement, modalElement);
+        
+        // Store reference to the new element
+        const newModalEl = document.getElementById('settingsModal');
+        if (!newModalEl) return;
+        
+        // Add new event listener for when the modal is hidden
+        newModalEl.addEventListener('hidden.bs.modal', () => {
+            // Clean up the modal instance
+            if (this.modal) {
+                this.modal.dispose();
+                this.modal = null;
+            }
+            
+            // Force remove any remaining backdrops
+            document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                backdrop.parentNode?.removeChild(backdrop);
+            });
+            
+            // Reset body classes and styles
+            document.body.classList.remove('modal-open');
+            document.body.style.paddingRight = '';
+            document.body.style.overflow = '';
+        });
+        
+        // Show the modal
+        this.modal.show();
+        
+        // Force backdrop creation if it doesn't exist
+        if (!document.querySelector('.modal-backdrop')) {
+            const backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop fade show';
+            document.body.appendChild(backdrop);
+            document.body.classList.add('modal-open');
+        }
     }
 
     /**

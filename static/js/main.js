@@ -66,16 +66,23 @@ const App = {
      * Sayfa girişi, navbar ve ana içerik için GSAP tabanlı global animasyonları başlatır.
      */
     initializeGlobalAnimations: function() {
-        if (typeof gsap === 'undefined') {
-            console.warn('Uyarı: GSAP kütüphanesi bulunamadı, animasyonlar devre dışı bırakıldı.');
-            return;
+        // Completely disable all animations
+        const mainElement = document.querySelector('main');
+        if (mainElement) {
+            // Ensure main element is immediately visible with no animation
+            mainElement.style.opacity = '1';
+            mainElement.style.transform = 'none';
         }
-
-        gsap.from('body', { duration: 0.5, opacity: 0, ease: 'power2.out' });
-        gsap.from('.navbar', { duration: 0.8, y: -50, opacity: 0, ease: 'power2.out', delay: 0.2 });
-        gsap.from('main', { duration: 1, y: 30, opacity: 0, ease: 'power2.out', delay: 0.4 });
-
-        this.initializeButtonAnimations();
+        
+        // Ensure body is immediately visible
+        document.body.style.opacity = '1';
+        
+        // Ensure navbar is immediately visible
+        const navbar = document.querySelector('.navbar');
+        if (navbar) {
+            navbar.style.opacity = '1';
+            navbar.style.transform = 'none';
+        }
     },
 
     /**

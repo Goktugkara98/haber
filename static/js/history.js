@@ -45,6 +45,23 @@ class HistoryManager {
         this.filteredHistory = [];
         this.currentModal = null;
         
+        // Bind all methods to ensure 'this' context is maintained
+        const methods = [
+            'init', 'bindEvents', 'loadHistory', 'loadStatistics', 'renderHistory',
+            'filterHistory', 'showMessageModal', 'markAsRead', 'renderPagination',
+            'goToPage', 'createHistoryItemHTML', 'updateModalContent', 'getStatusIcon',
+            'getStatusText', 'getStatusColor', 'formatDate', 'truncateText', 'escapeText',
+            'copyToClipboard', 'downloadText', 'showLoading', 'hideLoading', 'showError',
+            'showNotification', 'debounce', 'attachItemEventListeners', 'handleHistoryItemClick'
+        ];
+        
+        // Bind each method to the instance
+        methods.forEach(method => {
+            if (typeof this[method] === 'function') {
+                this[method] = this[method].bind(this);
+            }
+        });
+        
         this.init();
     }
     
@@ -96,26 +113,75 @@ class HistoryManager {
      */
     async loadHistory() {
         try {
-            this.showLoading();
             console.log('Bilgi: Geçmiş verileri API\'den yükleniyor...');
+            this.showLoading();
             
             const response = await fetch('/api/history?limit=1000');
-            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             
-            if (data.success) {
+            const data = await response.json();
+            console.log('API Yanıtı:', data); // Debug log
+            
+            if (data && data.success) {
                 this.allHistory = Array.isArray(data.history) ? data.history : [];
                 this.filteredHistory = [...this.allHistory];
                 this.totalItems = this.allHistory.length;
                 console.log(`Bilgi: ${this.totalItems} adet geçmiş kaydı başarıyla yüklendi.`);
+                
+                // Ensure UI is in a consistent state
+                const historyList = document.getElementById('history-list');
+                const noResults = document.getElementById('no-results');
+                if (historyList) historyList.style.display = 'block';
+                if (noResults) noResults.style.display = 'none';
+                
                 this.renderHistory();
             } else {
-                throw new Error(data.error || 'Bilinmeyen bir sunucu hatası oluştu.');
+                const errorMsg = data?.error || 'Bilinmeyen bir sunucu hatası oluştu.';
+                console.error('API Hatası:', errorMsg);
+                throw new Error(errorMsg);
             }
         } catch (error) {
             console.error('Hata: Geçmiş verileri yüklenirken bir hata oluştu.', error);
             this.showError('Geçmiş yüklenirken bir hata oluştu. Lütfen bağlantınızı kontrol edin.');
+            
+            // Ensure UI is in a consistent state on error
+            const historyList = document.getElementById('history-list');
+            const noResults = document.getElementById('no-results');
+            if (historyList) historyList.style.display = 'none';
+            if (noResults) {
+                noResults.style.display = 'block';
+                noResults.innerHTML = `
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h4>Veriler yüklenirken bir hata oluştu</h4>
+                    <p class="text-muted">Lütfen sayfayı yenileyip tekrar deneyin.</p>
+                    <button class="btn btn-warning mt-3" onclick="window.location.reload()">
+                        <i class="fas fa-sync-alt me-2"></i>Sayfayı Yenile
+                    </button>
+                `;
+            }
         } finally {
             this.hideLoading();
+            
+            // Add a small delay before checking if we need to show the no-results message
+            setTimeout(() => {
+                const historyList = document.getElementById('history-list');
+                const noResults = document.getElementById('no-results');
+                
+                if (historyList && noResults) {
+                    const hasVisibleItems = historyList.children.length > 0 && 
+                                         window.getComputedStyle(historyList).display !== 'none';
+                    
+                    if (!hasVisibleItems && this.filteredHistory.length === 0) {
+                        noResults.style.display = 'block';
+                        historyList.style.display = 'none';
+                    } else {
+                        noResults.style.display = 'none';
+                        historyList.style.display = 'block';
+                    }
+                }
+            }, 100);
         }
     }
     
@@ -174,30 +240,97 @@ class HistoryManager {
      * Eğer hiç sonuç yoksa "Sonuç bulunamadı" mesajını gösterir.
      */
     renderHistory() {
-        const historyList = document.getElementById('history-list');
-        const noResults = document.getElementById('no-results');
-        
-        if (!historyList || !noResults) {
-            console.error('Hata: Geçmiş listesi için gerekli DOM elemanları bulunamadı.');
-            return;
+        try {
+            const historyList = document.getElementById('history-list');
+            const noResults = document.getElementById('no-results');
+            
+            if (!historyList || !noResults) {
+                console.error('Hata: Geçmiş listesi için gerekli DOM elemanları bulunamadı.');
+                return;
+            }
+            
+            // Always ensure we have valid data
+            if (!Array.isArray(this.filteredHistory)) {
+                console.error('Hata: Geçersiz veri formatı - filteredHistory bir dizi değil');
+                this.filteredHistory = [];
+            }
+            
+            // Check if we have any items to display
+            if (this.filteredHistory.length === 0) {
+                console.log('Bilgi: Gösterilecek geçmiş kaydı bulunamadı.');
+                historyList.style.display = 'none';
+                noResults.style.display = 'block';
+                this.hidePagination();
+                return;
+            }
+            
+            // Show the history list and hide no results message
+            historyList.style.display = 'block';
+            noResults.style.display = 'none';
+            
+            // Calculate pagination
+            const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+            const endIndex = Math.min(startIndex + this.itemsPerPage, this.filteredHistory.length);
+            const pageItems = this.filteredHistory.slice(startIndex, endIndex);
+            
+            // Safely generate HTML for each item
+            let historyHTML = '';
+            try {
+                historyHTML = pageItems.map(item => {
+                    try {
+                        return this.createHistoryItemHTML(item);
+                    } catch (itemError) {
+                        console.error('Hata: Geçmiş öğesi oluşturulurken hata:', itemError, item);
+                        return ''; // Skip problematic items
+                    }
+                }).join('');
+            } catch (renderError) {
+                console.error('Hata: Geçmiş listesi oluşturulurken hata:', renderError);
+                historyHTML = '<div class="alert alert-warning">Geçmiş verileri yüklenirken bir hata oluştu.</div>';
+            }
+            
+            // Safely update the DOM
+            try {
+                historyList.innerHTML = historyHTML || '<div class="alert alert-info">Gösterilecek içerik bulunamadı.</div>';
+                historyList.style.display = 'block';
+                noResults.style.display = 'none';
+                
+                // Re-attach event listeners after DOM update
+                this.attachItemEventListeners();
+                
+                // Update pagination
+                this.renderPagination();
+                
+            } catch (domError) {
+                console.error('Hata: DOM güncellenirken hata oluştu:', domError);
+                noResults.style.display = 'block';
+                noResults.innerHTML = `
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                    <h4>Sayfa yüklenirken bir hata oluştu</h4>
+                    <p class="text-muted">Lütfen sayfayı yenileyip tekrar deneyin.</p>
+                    <button class="btn btn-danger mt-3" onclick="window.location.reload()">
+                        <i class="fas fa-sync-alt me-2"></i>Sayfayı Yenile
+                    </button>
+                `;
+                historyList.style.display = 'none';
+            }
+            
+        } catch (error) {
+            console.error('Kritik Hata: renderHistory sırasında beklenmeyen bir hata oluştu:', error);
+            // Last resort - show error message
+            const noResults = document.getElementById('no-results');
+            if (noResults) {
+                noResults.style.display = 'block';
+                noResults.innerHTML = `
+                    <i class="fas fa-bug fa-3x text-danger mb-3"></i>
+                    <h4>Kritik Hata</h4>
+                    <p class="text-muted">Sayfa yenilenmeli. Hata detayı: ${error.message || 'Bilinmeyen hata'}</p>
+                    <button class="btn btn-danger mt-3" onclick="window.location.reload()">
+                        <i class="fas fa-sync-alt me-2"></i>Sayfayı Yenile
+                    </button>
+                `;
+            }
         }
-        
-        if (this.filteredHistory.length === 0) {
-            historyList.style.display = 'none';
-            noResults.style.display = 'block';
-            this.hidePagination();
-            return;
-        }
-        
-        historyList.style.display = 'block';
-        noResults.style.display = 'none';
-        
-        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-        const endIndex = startIndex + this.itemsPerPage;
-        const pageItems = this.filteredHistory.slice(startIndex, endIndex);
-        
-        historyList.innerHTML = pageItems.map(item => this.createHistoryItemHTML(item)).join('');
-        this.renderPagination();
     }
     
     /**
@@ -207,31 +340,67 @@ class HistoryManager {
      * @returns {string} - Oluşturulan HTML metni.
      */
     createHistoryItemHTML(item) {
-        if (!item) return '';
-        
-        const statusIcon = this.getStatusIcon(item.status);
-        const statusText = this.getStatusText(item.status);
-        const formattedDate = this.formatDate(item.created_at);
-        const truncatedText = this.truncateText(item.original_text || '', 150);
-        
-        return `
-            <div class="history-item ${item.read_status === 'unread' ? 'unread' : ''}" onclick="historyManager.showMessageModal(${item.id})">
-                <div class="history-item-content">
-                    <div class="history-item-icon ${item.status}"><i class="${statusIcon}"></i></div>
-                    <div class="history-item-body">
-                        <div class="history-item-header">
-                            <h5 class="history-item-title">${truncatedText}</h5>
-                            <div class="history-item-meta">
-                                <span class="history-status ${item.status}">${statusText}</span>
-                                <span class="history-date">${formattedDate}</span>
-                                ${item.read_status === 'unread' ? '<div class="unread-indicator"></div>' : ''}
-                            </div>
+        try {
+            if (!item || typeof item !== 'object') {
+                console.error('Hata: Geçersiz öğe verisi', item);
+                return '';
+            }
+            
+            const statusIcon = this.getStatusIcon(item.status || 'pending');
+            const statusText = this.getStatusText(item.status || 'pending');
+            const formattedDate = this.formatDate(item.created_at || new Date().toISOString());
+            const truncatedText = this.truncateText(item.original_text || 'İçerik yok', 150);
+            const isUnread = item.read_status === 'unread';
+            const itemId = item.id || Date.now();
+            
+            // Escape HTML to prevent XSS
+            const escapeHtml = (unsafe) => {
+                if (!unsafe) return '';
+                return unsafe
+                    .toString()
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            };
+            
+            const safeTruncatedText = escapeHtml(truncatedText);
+            
+            return `
+                <div class="history-item ${isUnread ? 'unread' : ''}" 
+                     data-message-id="${itemId}"
+                     data-status="${escapeHtml(item.status || 'pending')}"
+                     data-read-status="${item.read_status || 'read'}">
+                    <div class="history-item-content">
+                        <div class="history-item-icon ${escapeHtml(item.status || 'pending')}">
+                            <i class="${statusIcon}"></i>
                         </div>
-                        <div class="history-item-text">${truncatedText}</div>
+                        <div class="history-item-body">
+                            <div class="history-item-header">
+                                <h5 class="history-item-title">${safeTruncatedText}</h5>
+                                <div class="history-item-meta">
+                                    <span class="history-status ${escapeHtml(item.status || 'pending')}">
+                                        ${statusText}
+                                    </span>
+                                    <span class="history-date">${formattedDate}</span>
+                                    ${isUnread ? '<div class="unread-indicator"></div>' : ''}
+                                </div>
+                            </div>
+                            <div class="history-item-text">${safeTruncatedText}</div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
+            `;
+        } catch (error) {
+            console.error('Hata: Geçmiş öğesi oluşturulurken hata oluştu:', error, item);
+            return `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Bu öğe yüklenirken bir hata oluştu.
+                </div>
+            `;
+        }
     }
     
     /**
@@ -296,23 +465,68 @@ class HistoryManager {
      */
     async showMessageModal(messageId) {
         try {
+            // Find the message in the history
             const message = this.allHistory.find(item => item.id === messageId);
-            if (!message) return;
+            if (!message) {
+                console.error(`Hata: ${messageId} ID'li mesaj bulunamadı.`);
+                this.showNotification('Mesaj bulunamadı', 'error');
+                return;
+            }
             
+            // Store the current message
             this.currentModal = message;
+            
+            // Update the modal content
             this.updateModalContent(message);
             
-            new bootstrap.Modal(document.getElementById('messageModal')).show();
+            // Initialize and show the modal
+            const modalElement = document.getElementById('messageModal');
+            if (!modalElement) {
+                throw new Error('Modal elementi bulunamadı');
+            }
             
+            // Initialize Bootstrap modal if not already done
+            let modal = bootstrap.Modal.getInstance(modalElement);
+            if (!modal) {
+                modal = new bootstrap.Modal(modalElement, {
+                    backdrop: 'static',
+                    keyboard: true
+                });
+            }
+            
+            // Show the modal
+            modal.show();
+            
+            // Mark as read if unread
             if (message.read_status === 'unread') {
-                await this.markAsRead(messageId);
-                message.read_status = 'read';
-                this.renderHistory();
-                this.loadStatistics();
+                try {
+                    await this.markAsRead(messageId);
+                    message.read_status = 'read';
+                    
+                    // Update the UI to reflect the read status
+                    const historyItems = document.querySelectorAll('.history-item');
+                    const itemElement = Array.from(historyItems).find(item => 
+                        item.getAttribute('data-message-id') === messageId.toString()
+                    );
+                    
+                    if (itemElement) {
+                        itemElement.classList.remove('unread');
+                        const unreadIndicator = itemElement.querySelector('.unread-indicator');
+                        if (unreadIndicator) {
+                            unreadIndicator.remove();
+                        }
+                    }
+                    
+                    // Refresh statistics
+                    this.loadStatistics();
+                } catch (error) {
+                    console.error('Hata: Mesaj okundu olarak işaretlenirken hata oluştu:', error);
+                    // Continue showing the modal even if marking as read fails
+                }
             }
         } catch (error) {
             console.error('Hata: Mesaj detayı modalı gösterilemedi.', error);
-            this.showNotification('Mesaj yüklenirken hata oluştu', 'error');
+            this.showNotification('Mesaj yüklenirken hata oluştu: ' + (error.message || 'Bilinmeyen hata'), 'error');
         }
     }
     
@@ -347,34 +561,57 @@ class HistoryManager {
      * API üzerinden bir mesajı "okundu" olarak işaretler.
      * @param {number} messageId - Okundu olarak işaretlenecek mesajın ID'si.
      */
+    /**
+     * 1.15 markAsRead()
+     * API üzerinden bir mesajı "okundu" olarak işaretler.
+     * @param {number} messageId - Okundu olarak işaretlenecek mesajın ID'si.
+     */
     async markAsRead(messageId) {
         try {
-            await fetch(`/api/mark-as-read/${messageId}`, { method: 'POST' });
+            const response = await fetch(`/api/mark-as-read/${messageId}`, { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            return await response.json();
         } catch (error) {
             console.error('Hata: Mesaj okundu olarak işaretlenemedi.', error);
+            throw error; // Re-throw to allow caller to handle the error
         }
     }
     
-    /**
-     * 1.16 Yardımcı Metotlar
-     * Durum, ikon, metin, tarih formatlama gibi küçük yardımcı fonksiyonlar.
-     */
     getStatusIcon(status) {
-        return {
+        const icons = {
             'processing': 'fas fa-spinner fa-spin',
             'pending': 'fas fa-clock',
             'completed': 'fas fa-check-circle',
-            'failed': 'fas fa-exclamation-circle'
-        }[status] || 'fas fa-question-circle';
+            'failed': 'fas fa-exclamation-circle',
+            'error': 'fas fa-times-circle',
+            'success': 'fas fa-check-circle',
+            'warning': 'fas fa-exclamation-triangle',
+            'info': 'fas fa-info-circle'
+        };
+        return icons[status] || 'fas fa-question-circle';
     }
     
     getStatusText(status) {
-        return {
+        const statuses = {
             'processing': 'İşleniyor',
-            'pending': 'İşleniyor',
-            'completed': 'Cevap Geldi',
-            'failed': 'Hata'
-        }[status] || status;
+            'pending': 'Bekliyor',
+            'completed': 'Tamamlandı',
+            'failed': 'Başarısız',
+            'error': 'Hata',
+            'success': 'Başarılı',
+            'warning': 'Uyarı',
+            'info': 'Bilgi'
+        };
+        return statuses[status] || 'Bilinmeyen Durum';
     }
     
     getStatusColor(status) {
@@ -443,6 +680,41 @@ class HistoryManager {
     
     showError(message) {
         this.showNotification(message, 'error');
+    }
+    
+    /**
+     * Attaches event listeners to history items for handling clicks
+     * This uses event delegation for better performance with dynamic content
+     */
+    attachItemEventListeners() {
+        const historyList = document.getElementById('history-list');
+        if (!historyList) {
+            console.warn('History list element not found for event delegation');
+            return;
+        }
+        
+        // Remove any existing click listeners to prevent duplicates
+        historyList.removeEventListener('click', this.handleHistoryItemClick);
+        
+        // Add new click listener with event delegation
+        historyList.addEventListener('click', this.handleHistoryItemClick);
+    }
+    
+    /**
+     * Handles click events on history items
+     * @param {Event} event - The click event
+     */
+    handleHistoryItemClick(event) {
+        // Find the closest history item element
+        const historyItem = event.target.closest('.history-item');
+        if (!historyItem) return;
+        
+        // Get the message ID from the data attribute
+        const messageId = historyItem.getAttribute('data-message-id');
+        if (!messageId) return;
+        
+        // Show the message modal
+        this.showMessageModal(parseInt(messageId, 10));
     }
     
     showNotification(message, type = 'info') {
