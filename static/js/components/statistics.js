@@ -54,7 +54,7 @@ class StatisticsManager {
      */
     async loadStatistics() {
         try {
-            const response = await fetch('/api/statistics');
+            const response = await fetch(AppConfig.apiEndpoints.getStatistics);
             const data = await response.json();
             
             if (data.success) {
@@ -121,7 +121,7 @@ class StatisticsManager {
         historyList.innerHTML = '<div class="history-loading">Geçmiş yükleniyor...</div>';
 
         try {
-            const response = await fetch('/api/history');
+            const response = await fetch(AppConfig.apiEndpoints.getHistory);
             const data = await response.json();
             
             if (data.success) {
@@ -246,7 +246,7 @@ class StatisticsManager {
      */
     async markAsRead(messageId) {
         try {
-            await fetch(`/api/mark-as-read/${messageId}`, { method: 'POST' });
+            await fetch(`${AppConfig.apiEndpoints.markAsRead}/${messageId}`, { method: 'POST' });
             console.log(`Mesaj #${messageId} okundu olarak işaretlendi.`);
         } catch (error) {
             console.error('Mesaj okundu olarak işaretlenirken hata:', error);

@@ -1,22 +1,21 @@
 # -*- coding: utf-8 -*-
-"""
-Bu dosya, yapay zeka (AI) işlemleriyle ilgili servis mantığını içerir.
-Google Gemini API'si ile entegrasyonu yönetir, haber metinlerini işler
-ve veritabanı ile ilgili işlemleri (kayıt, güncelleme, sorgulama) gerçekleştirir.
-
-İçindekiler:
-1.0 Ana Servis Metotları
-    - process_news: Bir haber metnini AI ile işler.
-    - get_processing_history: Kullanıcının geçmiş işlemlerini veritabanından alır.
-    - mark_as_read: Bir işlem kaydını okundu olarak işaretler.
-    - get_user_statistics: Kullanıcının işlem istatistiklerini hesaplar.
-2.0 Özel Yardımcı Metotlar
-    - _create_prompt: AI modeline gönderilecek komut metnini (prompt) oluşturur.
-    - validate_news: Gelen haber metninin geçerliliğini kontrol eder.
-3.0 Veritabanı İşlemleri
-    - _save_processing_record: Yeni bir işlem kaydını veritabanına ekler.
-    - _update_processing_status: Mevcut bir işlem kaydının durumunu günceller.
-"""
+#
+#Bu dosya, yapay zeka (AI) işlemleriyle ilgili servis mantığını içerir.
+#Google Gemini API'si ile entegrasyonu yönetir, haber metinlerini işler
+#ve veritabanı ile ilgili işlemleri (kayıt, güncelleme, sorgulama) gerçekleştirir.
+#
+#İçindekiler:
+#1.0 Ana Servis Metotları
+#    - process_news: Bir haber metnini AI ile işler.
+#    - get_processing_history: Kullanıcının geçmiş işlemlerini veritabanından alır.
+#    - mark_as_read: Bir işlem kaydını okundu olarak işaretler.
+#    - get_user_statistics: Kullanıcının işlem istatistiklerini hesaplar.
+#2.0 Özel Yardımcı Metotlar
+#    - _create_prompt: AI modeline gönderilecek komut metnini (prompt) oluşturur.
+#    - validate_news: Gelen haber metninin geçerliliğini kontrol eder.
+#3.0 Veritabanı İşlemleri
+#    - _save_processing_record: Yeni bir işlem kaydını veritabanına ekler.
+#    - _update_processing_status: Mevcut bir işlem kaydının durumunu günceller.
 
 import os
 import google.generativeai as genai

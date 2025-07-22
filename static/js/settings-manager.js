@@ -70,7 +70,7 @@ class SettingsManager {
      * kullanıcı ayarlarını yükler ve eksik ayarları varsayılanlarla tamamlar.
      */
     async loadFromDatabase() {
-        const response = await fetch('/api/prompt/user-settings');
+        const response = await fetch(AppConfig.apiEndpoints.getUserSettings);
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
@@ -98,7 +98,7 @@ class SettingsManager {
      * @returns {Promise<object>} - API'den dönen sonuç.
      */
     async saveToDatabase(newSettings) {
-        const response = await fetch('/api/prompt/user-settings', {
+        const response = await fetch(AppConfig.apiEndpoints.saveUserSettings, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ settings: newSettings })

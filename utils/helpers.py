@@ -3,20 +3,36 @@
 Yardımcı Fonksiyonlar Modülü
 
 Bu modül, proje genelinde kullanılan çeşitli yardımcı fonksiyonları içerir.
-Metin temizleme, formatlama ve doğrulama gibi işlemler burada toplanmıştır.
+Metin temizleme, formatlama, doğrulama ve oturum yönetimi gibi işlemler burada toplanmıştır.
 
 İçindekiler:
 1.0 clean_text: Metindeki fazla boşlukları temizler.
 2.0 validate_email: E-posta adresinin formatını doğrular.
 3.0 format_date: Tarih nesnesini standart bir metin formatına çevirir.
 4.0 truncate_text: Metni belirtilen uzunlukta kısaltır.
+5.0 get_user_id: Kullanıcı için eşsiz bir oturum kimliği oluşturur veya mevcut olanı döndürür.
 """
 
 import re
+import uuid
 from datetime import datetime
+from flask import session
 
 # 1.0 Metin Temizleme
 # ---
+def get_user_id():
+    """
+    Kullanıcı için bir oturum (session) kimliği alır veya oluşturur.
+    Oturumda 'user_id' yoksa, yeni bir UUID4 oluşturur ve atar.
+    
+    Returns:
+        str: Kullanıcıya ait benzersiz kimlik (UUID)
+    """
+    if 'user_id' not in session:
+        session['user_id'] = str(uuid.uuid4())
+    return session['user_id']
+
+
 def clean_text(text):
     """
     Verilen metnin başındaki ve sonundaki boşlukları kaldırır,

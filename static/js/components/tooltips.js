@@ -65,7 +65,7 @@ const TooltipComponent = {
      */
     loadPromptTexts: async function() {
         try {
-            const response = await fetch('/api/prompt/config');
+            const response = await fetch(AppConfig.apiEndpoints.getPromptConfig);
             if (response.ok) {
                 const data = await response.json();
                 if (data.success && data.data.sections) {
@@ -109,7 +109,7 @@ const TooltipComponent = {
         }
 
         try {
-            const response = await fetch(`/api/prompt/sections/${this.currentEditingKey}`, {
+            const response = await fetch(`${AppConfig.apiEndpoints.updatePromptSection}/${this.currentEditingKey}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ prompt_text: newText })

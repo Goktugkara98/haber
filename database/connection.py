@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Veritabanı Bağlantı Sınıfı
-===========================
-Bu modül, MySQL veritabanı ile bağlantı kurmak, bağlantıyı sonlandırmak
-ve SQL sorgularını yürütmek için bir sınıf (`DatabaseConnection`) sağlar.
-
-İçindekiler:
--------------
-1.0 DatabaseConnection Sınıfı
-    1.1 __init__(): Sınıfın yapıcı metodu, otomatik bağlantı kurar.
-    1.2 connect(): Veritabanı bağlantısını kurar ve karakter setini ayarlar.
-    1.3 disconnect(): Veritabanı bağlantısını güvenli bir şekilde kapatır.
-    1.4 execute_query(): SQL sorgularını çalıştırır ve sonuçları döndürür.
-"""
+# Veritabanı Bağlantı Sınıfı
+# ===========================
+# Bu modül, MySQL veritabanı ile bağlantı kurmak, bağlantıyı sonlandırmak
+# ve SQL sorgularını yürütmek için bir sınıf (`DatabaseConnection`) sağlar.
+#
+# İçindekiler:
+# -------------
+# 1.0 DatabaseConnection Sınıfı
+#     1.1 __init__(): Sınıfın yapıcı metodu, otomatik bağlantı kurar.
+#     1.2 connect(): Veritabanı bağlantısını kurar ve karakter setini ayarlar.
+#     1.3 disconnect(): Veritabanı bağlantısını güvenli bir şekilde kapatır.
+#     1.4 execute_query(): SQL sorgularını çalıştırır ve sonuçları döndürür.
 
 # --- Gerekli Kütüphaneler ---
 import mysql.connector

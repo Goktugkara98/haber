@@ -1,26 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Veritabanı Başlatma Betiği
-===========================
-Bu betik, veritabanını (eğer mevcut değilse) oluşturur, 'schema.sql' dosyasını
-çalıştırarak tablo yapılarını kurar ve varsayılan verileri ekler.
-
-İçindekiler:
--------------
-1.0 Veritabanı Bağlantısı
-    1.1 get_db_connection(): Belirtilen veritabanına bağlantı oluşturur.
-
-2.0 Veritabanı ve Şema Kurulumu
-    2.1 create_database_if_not_exists(): Veritabanını, eğer yoksa, oluşturur.
-    2.2 execute_sql_file(): Bir SQL dosyasındaki komutları çalıştırır.
-
-3.0 Doğrulama
-    3.1 verify_installation(): Kurulumun doğruluğunu kontrol eder.
-
-4.0 Ana Yürütme
-    4.1 main(): Betiğin ana başlatma işlevini yerine getirir.
-"""
+# Veritabanı Başlatma Betiği
+# ===========================
+# Bu betik, veritabanını (eğer mevcut değilse) oluşturur, 'schema.sql' dosyasını
+# çalıştırarak tablo yapılarını kurar ve varsayılan verileri ekler.
+#
+# İçindekiler:
+# -------------
+# 1.0 Veritabanı Bağlantısı
+#     1.1 get_db_connection(): Belirtilen veritabanına bağlantı oluşturur.
+#
+# 2.0 Veritabanı ve Şema Kurulumu
+#     2.1 create_database_if_not_exists(): Veritabanını, eğer yoksa, oluşturur.
+#     2.2 execute_sql_file(): Bir SQL dosyasındaki komutları çalıştırır.
+#
+# 3.0 Doğrulama
+#     3.1 verify_installation(): Kurulumun doğruluğunu kontrol eder.
+# 4.0 Ana Yürütme
+#     4.1 main(): Betiğin ana başlatma işlevini yerine getirir.
 
 # --- Gerekli Kütüphaneler ---
 import mysql.connector

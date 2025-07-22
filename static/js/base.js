@@ -34,9 +34,23 @@ const AppConfig = {
      * Backend API adreslerini merkezi bir yerden yönetir.
      */
     apiEndpoints: {
-        processNews: '/api/process-news',
-        saveNews: '/api/save-news',
-        getNews: '/api/get-news'
+        // News processing endpoints
+        processNews: '/api/v1/news/process',
+        
+        // History endpoints
+        getHistory: '/api/v1/news/history',
+        getStatistics: '/api/v1/news/statistics',
+        markAsRead: '/api/v1/news/mark-as-read',
+        
+        // Prompt endpoints
+        getPromptConfig: '/api/v1/prompts/config',
+        getPromptSections: '/api/v1/prompts/sections',
+        updatePromptSection: '/api/v1/prompts/sections',
+        getUserSettings: '/api/v1/prompts/settings',
+        saveUserSettings: '/api/v1/prompts/settings',
+        buildCompletePrompt: '/api/v1/prompts/build-complete-prompt',
+        buildCompletePrompt: '/api/v1/prompts/build-complete-prompt',
+        processWithPrompt: '/api/v1/prompts/process-news'
     },
     
     /**

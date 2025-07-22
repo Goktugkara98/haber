@@ -308,9 +308,28 @@ class SettingsUI {
             this.showSaveLoading(true);
             const newSettings = {};
             const formElements = form.querySelectorAll('input, select, textarea');
+            
+            // First, collect all form values
+            const formValues = {};
             formElements.forEach(element => {
-                if (element.name) newSettings[element.name] = element.value;
+                if (element.name) {
+                    formValues[element.name] = element.value;
+                }
             });
+            
+            // Map form values to canonical keys from settings-config.js
+            for (const [key, value] of Object.entries(formValues)) {
+                // Try to find the canonical key in settings config
+                const config = window.SettingsUtils.getConfig(key);
+                if (config) {
+                    // Use the canonical key from the config
+                    newSettings[config.dbKey] = value;
+                } else {
+                    // If no config found, use the original key (for backward compatibility)
+                    console.warn(`Warning: No config found for setting key: ${key}. Using as-is.`);
+                    newSettings[key] = value;
+                }
+            }
             
             await window.settingsManager.updateSettings(newSettings);
 

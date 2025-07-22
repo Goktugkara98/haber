@@ -1,45 +1,35 @@
 # -*- coding: utf-8 -*-
-"""
-Bu dosya, AI'a gönderilecek olan "prompt"ların (komut metinleri) yönetimiyle
-ilgili API yönlendirmelerini içerir. Prompt konfigürasyonları, bölümleri ve
-kullanıcıya özel ayarlar bu dosya üzerinden yönetilir.
-
-İçindekiler:
-1.0 Yardımcı Fonksiyonlar
-    - get_user_id: Kullanıcı için eşsiz bir oturum kimliği oluşturur veya mevcut olanı döndürür.
-2.0 Prompt Konfigürasyon API'leri
-    - get_prompt_config: Mevcut aktif prompt konfigürasyonunu getirir.
-    - export_configuration: Mevcut aktif konfigürasyonu dışa aktarır (JSON formatında).
-3.0 Kullanıcı Ayarları API'leri
-    - get_user_settings: Kullanıcının mevcut prompt ayarlarını getirir.
-    - save_user_settings: Kullanıcının prompt ayarlarını kaydeder.
-4.0 Prompt Bölüm API'leri
-    - get_prompt_section: Belirli bir prompt bölümünün metnini getirir.
-    - update_prompt_section: Belirli bir prompt bölümünün metnini günceller.
-5.0 Prompt İşlem API'leri
-    - build_complete_prompt: Kullanıcı ayarlarına göre tam bir prompt metni oluşturur.
-    - process_news_with_prompt: Haber metnini mevcut prompt ayarlarıyla işler.
-"""
+#
+#Bu dosya, AI'a gönderilecek olan "prompt"ların (komut metinleri) yönetimiyle
+#ilgili API yönlendirmelerini içerir. Prompt konfigürasyonları, bölümleri ve
+#kullanıcıya özel ayarlar bu dosya üzerinden yönetilir.
+#
+#İçindekiler:
+#1.0 Yardımcı Fonksiyonlar
+#    - get_user_id: Kullanıcı için eşsiz bir oturum kimliği oluşturur veya mevcut olanı döndürür.
+#2.0 Prompt Konfigürasyon API'leri
+#    - get_prompt_config: Mevcut aktif prompt konfigürasyonunu getirir.
+#    - export_configuration: Mevcut aktif konfigürasyonu dışa aktarır (JSON formatında).
+#3.0 Kullanıcı Ayarları API'leri
+#    - get_user_settings: Kullanıcının mevcut prompt ayarlarını getirir.
+#    - save_user_settings: Kullanıcının prompt ayarlarını kaydeder.
+#4.0 Prompt Bölüm API'leri
+#    - get_prompt_section: Belirli bir prompt bölümünün metnini getirir.
+#    - update_prompt_section: Belirli bir prompt bölümünün metnini günceller.
+#5.0 Prompt İşlem API'leri
+#    - build_complete_prompt: Kullanıcı ayarlarına göre tam bir prompt metni oluşturur.
+#    - process_news_with_prompt: Haber metnini mevcut prompt ayarlarıyla işler.
 
 from flask import Blueprint, request, jsonify, session
 from services.prompt_service import PromptService
-import uuid
+from utils.helpers import get_user_id
 import time
 
 bp = Blueprint('prompt', __name__)
 
 
 # --- 1.0 Yardımcı Fonksiyonlar ---
-
-def get_user_id():
-    """
-    Kullanıcı için bir oturum (session) kimliği alır veya oluşturur.
-    Oturumda 'user_id' yoksa, yeni bir UUID4 oluşturur ve atar.
-    """
-    if 'user_id' not in session:
-        session['user_id'] = str(uuid.uuid4())
-    return session['user_id']
-
+# get_user_id artık utils.helpers modülünden içe aktarılıyor
 
 # --- 2.0 Prompt Konfigürasyon API'leri ---
 

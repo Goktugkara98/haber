@@ -140,7 +140,7 @@ const ContentController = (function() {
             try {
                 window.statisticsManager?.onProcessingStart();
                 
-                const response = await fetch('/api/process-news', {
+                const response = await fetch(AppConfig.apiEndpoints.processNews, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

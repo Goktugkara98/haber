@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Kullanıcı Profili Oluşturma ve Ayarları Kaydetme Betiği
-========================================================
-Bu betik, belirli bir kullanıcı ('Göktuğ') için bir profil oluşturur,
-bu profili veritabanına ekler ve kullanıcı için varsayılan prompt
-ayarlarını kaydeder.
-
-İçindekiler:
--------------
-1.0 Kullanıcı Profili Yönetimi
-    1.1 create_user_profile(): Kullanıcıyı oluşturur ve ayarlarını kaydeder.
-
-2.0 Ana Yürütme
-    2.1 main(): Betiğin ana işlevini yerine getirir.
-"""
+# Kullanıcı Profili Oluşturma ve Ayarları Kaydetme Betiği
+# ========================================================
+# Bu betik, belirli bir kullanıcı ('Göktuğ') için bir profil oluşturur,
+# bu profili veritabanına ekler ve kullanıcı için varsayılan prompt
+# ayarlarını kaydeder.
+#
+# İçindekiler:
+# -------------
+# 1.0 Kullanıcı Profili Yönetimi
+#     1.1 create_user_profile(): Kullanıcıyı oluşturur ve ayarlarını kaydeder.
+#
+# 2.0 Ana Yürütme
+#     2.1 main(): Betiğin ana işlevini yerine getirir.
 
 # --- Gerekli Kütüphaneler ---
 import os

@@ -1,60 +1,24 @@
 # -*- coding: utf-8 -*-
 #
-#Bu dosya, Flask uygulamasının ana yönlendirmelerini (routes) içerir.
-#Kullanıcının etkileşimde bulunduğu temel sayfaları ve ana API uç noktalarını yönetir.
+# Bu dosya, haber işleme ile ilgili API endpoint'lerini içerir.
 #
-#İçindekiler:
-#1.0 Yardımcı Fonksiyonlar
-#    - get_user_id: Kullanıcı için eşsiz bir oturum kimliği oluşturur veya mevcut olanı döndürür.
-#2.0 Sayfa Yönlendirmeleri
-#    - home: Ana sayfayı render eder.
-#    - news: Haber işleme sayfasını render eder.
-#    - history: Geçmiş işlemler sayfasını render eder.
-#3.0 API Yönlendirmeleri
-#    - process_news: Gönderilen haber metnini AI servisi ile işler.
-#    - get_statistics: Kullanıcının işlem istatistiklerini getirir.
-#    - get_history: Kullanıcının geçmiş işlemlerini listeler.
-#    - get_processing_status: Belirli bir işlemin durumunu sorgular.
-#    - mark_as_read: Bir mesajı okundu olarak işaretler.
+# İçindekiler:
+# - process_news: Gönderilen haber metnini AI servisi ile işler.
+# - get_statistics: Kullanıcının işlem istatistiklerini getirir.
+# - get_history: Kullanıcının geçmiş işlemlerini listeler.
+# - get_processing_status: Belirli bir işlemin durumunu sorgular.
+# - mark_as_read: Bir mesajı okundu olarak işaretler.
 
-from flask import Blueprint, render_template, request, jsonify, session
-from services.prompt_service import PromptService
+from flask import Blueprint, request, jsonify, session
 from services.ai_service import AIService
 from database.connection import DatabaseConnection
 from utils.helpers import get_user_id
 import time
-import json
 
-bp = Blueprint('main', __name__)
+# Create a Blueprint for news API endpoints
+bp = Blueprint('news_api', __name__, url_prefix='/api/v1/news')
 
-
-# --- 1.0 Yardımcı Fonksiyonlar ---
-# get_user_id artık utils.helpers modülünden içe aktarılıyor
-
-# --- 2.0 Sayfa Yönlendirmeleri ---
-
-@bp.route('/')
-def home():
-    """Ana sayfayı ('index.html') render eder."""
-    return render_template('index.html')
-
-@bp.route('/news', methods=['GET', 'POST'])
-def news():
-    """Haber işleme sayfasını ('news.html') render eder."""
-    if request.method == 'POST':
-        # Gelecekte AI ile haber işleme mantığı buraya eklenebilir.
-        pass
-    return render_template('news.html')
-
-@bp.route('/history')
-def history():
-    """Geçmiş sayfasını ('history.html') render eder."""
-    return render_template('history.html')
-
-
-# --- 3.0 API Yönlendirmeleri ---
-
-@bp.route('/api/process-news', methods=['POST'])
+@bp.route('/process', methods=['POST'])
 def process_news():
     """
     Haber metnini işlemek için kullanılan ana API endpoint'i.
@@ -99,7 +63,7 @@ def process_news():
         print(f"Hata (process_news): {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@bp.route('/api/statistics', methods=['GET'])
+@bp.route('/statistics', methods=['GET'])
 def get_statistics():
     """Kullanıcının işlem istatistiklerini getirir."""
     try:
@@ -113,7 +77,7 @@ def get_statistics():
         print(f"Hata (get_statistics): {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@bp.route('/api/history', methods=['GET'])
+@bp.route('/history', methods=['GET'])
 def get_history():
     """
     Kullanıcının işleme geçmişini getirir.
@@ -132,7 +96,7 @@ def get_history():
         print(f"Hata (get_history): {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@bp.route('/api/processing-status/<int:processing_id>', methods=['GET'])
+@bp.route('/status/<int:processing_id>', methods=['GET'])
 def get_processing_status(processing_id):
     """
     Belirli bir işleme ait (processing_id) detayları ve durumu getirir.
@@ -163,7 +127,7 @@ def get_processing_status(processing_id):
         print(f"Hata (get_processing_status): {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@bp.route('/api/mark-as-read/<int:processing_id>', methods=['POST'])
+@bp.route('/mark-as-read/<int:processing_id>', methods=['POST'])
 def mark_as_read(processing_id):
     """Bir işlem kaydını okundu olarak işaretler."""
     try:

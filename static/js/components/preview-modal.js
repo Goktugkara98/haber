@@ -69,7 +69,7 @@ const PreviewModal = {
                 const settings = await this.getCurrentSettings();
                 console.log('Mevcut ayarlar alındı:', settings);
 
-                const response = await fetch('/api/prompt/build-complete-prompt', {
+                const response = await fetch(AppConfig.apiEndpoints.buildCompletePrompt, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ newsText: newsText, settings: settings })

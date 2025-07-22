@@ -1,32 +1,31 @@
 # -*- coding: utf-8 -*-
-"""
-Bu dosya, AI prompt'larının (komut metinleri) yapılandırılması ve yönetimi
-için servis mantığını içerir. Veritabanından prompt konfigürasyonlarını,
-bölümlerini, kurallarını ve kullanıcı ayarlarını okur. Bu bilgilere dayanarak
-AI modeline gönderilecek olan nihai prompt'u oluşturur.
-
-İçindekiler:
-1.0 Başlatma ve Yardımcı Metotlar
-    - __init__, __del__: Sınıfın başlatılması ve sonlandırılması.
-    - _load_prompt_templates: Şablonları JSON dosyasından yükler.
-    - _get_default_templates: Varsayılan şablonları döndürür.
-    - _get_category_display_name: Kategori anahtarına karşılık gelen görünen adı döndürür.
-2.0 Konfigürasyon Getirme Metotları
-    - get_active_config: Aktif prompt konfigürasyonunu getirir.
-    - get_config_sections, get_config_rules, get_rule_options: Konfigürasyonun parçalarını getirir.
-    - get_full_config_data: Arayüz için tüm konfigürasyon verisini toplar.
-    - export_config: Konfigürasyonu JSON olarak dışa aktarır.
-3.0 Kullanıcı Ayar Metotları
-    - get_user_settings: Kullanıcının ayarlarını veritabanından okur.
-    - save_user_setting, save_user_settings: Kullanıcı ayarlarını kaydeder.
-4.0 Prompt Oluşturma Metotları
-    - build_complete_prompt: Tüm parçaları birleştirerek nihai prompt'u oluşturur.
-    - _build_...: Prompt'un her bir bölümünü (görev tanımı, kurallar vb.) oluşturan yardımcı metotlar.
-5.0 Veritabanı İşlem Metotları
-    - update_prompt_section: Bir prompt bölümünü günceller.
-    - create_processing_record, update_processing_record: İşlem geçmişi kayıtlarını yönetir.
-    - get_user_history: Kullanıcının işlem geçmişini alır.
-"""
+#
+#Bu dosya, AI prompt'larının (komut metinleri) yapılandırılması ve yönetimi
+#için servis mantığını içerir. Veritabanından prompt konfigürasyonlarını,
+#bölümlerini, kurallarını ve kullanıcı ayarlarını okur. Bu bilgilere dayanarak
+#AI modeline gönderilecek olan nihai prompt'u oluşturur.
+#
+#İçindekiler:
+#1.0 Başlatma ve Yardımcı Metotlar
+#    - __init__, __del__: Sınıfın başlatılması ve sonlandırılması.
+#    - _load_prompt_templates: Şablonları JSON dosyasından yükler.
+#    - _get_default_templates: Varsayılan şablonları döndürür.
+#    - _get_category_display_name: Kategori anahtarına karşılık gelen görünen adı döndürür.
+#2.0 Konfigürasyon Getirme Metotları
+#    - get_active_config: Aktif prompt konfigürasyonunu getirir.
+#    - get_config_sections, get_config_rules, get_rule_options: Konfigürasyonun parçalarını getirir.
+#    - get_full_config_data: Arayüz için tüm konfigürasyon verisini toplar.
+#    - export_config: Konfigürasyonu JSON olarak dışa aktarır.
+#3.0 Kullanıcı Ayar Metotları
+#    - get_user_settings: Kullanıcının ayarlarını veritabanından okur.
+#    - save_user_setting, save_user_settings: Kullanıcı ayarlarını kaydeder.
+#4.0 Prompt Oluşturma Metotları
+#    - build_complete_prompt: Tüm parçaları birleştirerek nihai prompt'u oluşturur.
+#    - _build_...: Prompt'un her bir bölümünü (görev tanımı, kurallar vb.) oluşturan yardımcı metotlar.
+#5.0 Veritabanı İşlem Metotları
+#    - update_prompt_section: Bir prompt bölümünü günceller.
+#    - create_processing_record, update_processing_record: İşlem geçmişi kayıtlarını yönetir.
+#    - get_user_history: Kullanıcının işlem geçmişini alır.
 
 import json
 import os

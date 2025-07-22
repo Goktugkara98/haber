@@ -116,7 +116,7 @@ class HistoryManager {
             console.log('Bilgi: Geçmiş verileri API\'den yükleniyor...');
             this.showLoading();
             
-            const response = await fetch('/api/history?limit=1000');
+            const response = await fetch(`${AppConfig.apiEndpoints.getHistory}?limit=1000`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -191,7 +191,7 @@ class HistoryManager {
      */
     async loadStatistics() {
         try {
-            const response = await fetch('/api/statistics');
+            const response = await fetch(AppConfig.apiEndpoints.getStatistics);
             const data = await response.json();
             if (data.success) {
                 this.updateStatistics(data.statistics);
@@ -568,7 +568,7 @@ class HistoryManager {
      */
     async markAsRead(messageId) {
         try {
-            const response = await fetch(`/api/mark-as-read/${messageId}`, { 
+            const response = await fetch(`${AppConfig.apiEndpoints.markAsRead}/${messageId}`, { 
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

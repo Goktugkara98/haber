@@ -281,7 +281,7 @@ const MainContentComponent = {
             };
 
             console.log('Haber işleme API isteği gönderiliyor:', requestData);
-            const response = await Utils.apiRequest('/api/process-news', {
+            const response = await Utils.apiRequest(AppConfig.apiEndpoints.processNews, {
                 method: 'POST',
                 body: JSON.stringify(requestData)
             });

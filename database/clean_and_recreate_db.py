@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Veritabanı Temizleme ve Yeniden Oluşturma Betiği
-=================================================
-Bu betik, mevcut veritabanını siler (DROP) ve 'init_db.py' betiğini
-çağırarak en güncel şema ile yeniden oluşturur.
-
-İçindekiler:
--------------
-1.0 Veritabanı İşlemleri
-    1.1 drop_database(): Veritabanını siler.
-
-2.0 Ana Yürütme
-    2.1 main(): Betiğin ana işlevini yerine getirir.
-"""
+# Veritabanı Temizleme ve Yeniden Oluşturma Betiği
+# =================================================
+# Bu betik, mevcut veritabanını siler (DROP) ve 'init_db.py' betiğini
+# çağırarak en güncel şema ile yeniden oluşturur.
+#
+# İçindekiler:
+# -------------
+# 1.0 Veritabanı İşlemleri
+#     1.1 drop_database(): Veritabanını siler.
+#
+# 2.0 Ana Yürütme
+#     2.1 main(): Betiğin ana işlevini yerine getirir.
 
 # --- Gerekli Kütüphaneler ---
 import mysql.connector
