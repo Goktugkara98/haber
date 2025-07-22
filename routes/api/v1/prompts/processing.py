@@ -93,33 +93,54 @@ def process_news_with_prompt():
         start_time = time.time()
         
         try:
-            # AI servisini çağır (burada simüle ediyoruz, gerçek implementasyonda AI servisi çağrılacak)
-            complete_prompt = prompt_service.build_complete_prompt(
-                active_config['id'], 
-                user_settings, 
-                news_text
+            # AI servisini başlat
+            from services.ai_service import AIService
+            ai_service = AIService(prompt_service=prompt_service)
+            
+            # Haber metnini işle
+            result = ai_service.process_news(
+                news_text=news_text,
+                user_settings=user_settings,
+                user_id=user_id
             )
             
-            # Simüle edilmiş işlem süresi (gerçekte AI servisinden yanıt beklenir)
+            # İşlem süresini hesapla
             processing_time = int((time.time() - start_time) * 1000)  # milisaniye cinsinden
             
-            # İşlem kaydını güncelle
-            prompt_service.update_processing_record(
-                record_id,
-                status='completed',
-                processed_text=f"İşlenmiş metin buraya gelecek - Prompt: {complete_prompt[:100]}...",
-                processing_time_ms=processing_time
-            )
-            
-            return jsonify({
-                'success': True,
-                'data': {
-                    'processing_id': record_id,
-                    'status': 'completed',
-                    'processing_time_ms': processing_time,
-                    'settings_used': user_settings
-                }
-            })
+            if result.get('success'):
+                # Başarılı işlem
+                prompt_service.update_processing_record(
+                    record_id,
+                    status='completed',
+                    processed_text=result.get('processed_text', ''),
+                    processing_time_ms=processing_time,
+                    processing_id=result.get('processing_id')
+                )
+                
+                return jsonify({
+                    'success': True,
+                    'data': {
+                        'processing_id': record_id,
+                        'status': 'completed',
+                        'processing_time_ms': processing_time,
+                        'settings_used': user_settings,
+                        'original_text': result.get('original_text', ''),
+                        'processed_text': result.get('processed_text', '')
+                    }
+                })
+            else:
+                # Hata durumu
+                error_msg = result.get('error', 'Bilinmeyen bir hata oluştu')
+                prompt_service.update_processing_record(
+                    record_id,
+                    status='failed',
+                    processing_time_ms=processing_time,
+                    error_message=error_msg
+                )
+                return jsonify({
+                    'success': False,
+                    'error': error_msg
+                }), 500
             
         except Exception as process_error:
             processing_time = int((time.time() - start_time) * 1000)

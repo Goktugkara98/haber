@@ -1,0 +1,69 @@
+## 4. Sorun: Frontend'de Hata Yönetimi ve Kullanıcı Bildirimleri
+
+**Açıklama:**
+Frontend JavaScript kodunda (örn. `content.js`, `settings-manager.js`), API çağrılarında veya diğer işlemlerde meydana gelen hatalar genellikle `console.error` ile loglanmakta ve kullanıcıya genel bir hata mesajı (`AppConfig.messages.tr.processingError`) gösterilmektedir. Backend'den gelen detaylı hata mesajları (`result.error`) her zaman kullanıcıya iletilmemektedir. Bu durum, kullanıcı deneyimini olumsuz etkileyebilir ve hata ayıklamayı zorlaştırabilir.
+
+**AI Prompt:**
+
+```
+Bir JavaScript frontend uygulamasında, backend API çağrılarından dönen hata mesajlarının daha detaylı ve kullanıcı dostu bir şekilde gösterilmesi gerekmektedir. Mevcut durumda, hatalar genellikle konsola loglanmakta ve kullanıcıya genel bir hata mesajı sunulmaktadır. Bu durumu iyileştirmek için aşağıdaki adımları uygulayan bir kod değişikliği yapmalısın:
+
+1.  `haber/static/js/content.js` dosyasındaki `processNews` fonksiyonunu düzenle.
+2.  API yanıtında `success: false` olduğunda veya bir hata oluştuğunda, backend'den gelen `result.error` mesajını veya yakalanan hatanın detayını (`error.message`) kullanarak `Utils.showNotification` ile kullanıcıya daha spesifik bir hata mesajı göster.
+3.  Benzer şekilde, `haber/static/js/settings-manager.js` dosyasındaki `loadFromDatabase` ve `saveToDatabase` fonksiyonlarında da hata yakalama ve bildirim mekanizmasını iyileştir.
+4.  `AppConfig.messages.tr.processingError` gibi genel mesajları, daha dinamik ve backend'den gelen hata detaylarını içerecek şekilde güncelle.
+5.  Değişiklikleri test etmek için kasıtlı olarak hata döndüren bir backend senaryosu oluştur ve frontend'deki hata bildirimini gözlemle.
+
+**Mevcut Kod Parçaları:**
+
+`haber/static/js/content.js`
+```javascript
+        processNews: async function(data) {
+            try {
+                // ...
+                const result = await response.json();
+                // ...
+                return result;
+                
+            } catch (error) {
+                console.error('Hata: Haber işleme API isteği başarısız oldu.', error);
+                // ...
+                Utils.showNotification(AppConfig.messages.tr.processingError, 'danger');
+            }
+        },
+```
+
+`haber/static/js/settings-manager.js`
+```javascript
+    async loadFromDatabase() {
+        const response = await fetch(AppConfig.apiEndpoints.getUserSettings);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const result = await response.json();
+        if (!result.success) {
+            throw new Error(result.message || 'API\'den ayarlar alınamadı.');
+        }
+        // ...
+    }
+
+    async saveToDatabase(newSettings) {
+        const response = await fetch(AppConfig.apiEndpoints.saveUserSettings, {
+            // ...
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        const result = await response.json();
+        if (!result.success) {
+            throw new Error(result.message || 'Ayarlar kaydedilemedi.');
+        }
+        // ...
+    }
+```
+
+**Beklenen Çözüm:**
+
+Frontend, backend'den gelen detaylı hata mesajlarını yakalamalı ve kullanıcıya daha bilgilendirici bildirimler sunmalıdır. Bu, kullanıcı deneyimini iyileştirecek ve hata ayıklama sürecini kolaylaştıracaktır.
+```
+

@@ -1,0 +1,44 @@
+## 6. Sorun: Frontend'de `Utils.storage` ve `AppConfig` Tanımlamaları
+
+**Açıklama:**
+Frontend JavaScript dosyalarında (örn. `content.js`, `main.js`, `settings-manager.js` vb.) `Utils.storage` ve `AppConfig` gibi global nesneler kullanılmaktadır. Ancak, bu nesnelerin nerede tanımlandığı ve başlatıldığı tam olarak açık değildir. Bu durum, kodun okunabilirliğini ve bakımını zorlaştırmakta, ayrıca potansiyel çalışma zamanı hatalarına yol açabilmektedir (örneğin, bir nesne kullanılmadan önce tanımlanmamışsa).
+
+**AI Prompt:**
+
+```
+Bir JavaScript frontend uygulamasında, `Utils.storage` ve `AppConfig` gibi global nesnelerin tanımlandığı ve başlatıldığı yerin netleştirilmesi gerekmektedir. Bu nesnelerin uygulamanın başlangıcında (örn. `app-init.js` veya `main.js` içinde) merkezi bir şekilde tanımlanması ve tüm modüllerin bu tanımlara güvenli bir şekilde erişebilmesi sağlanmalıdır.
+
+Bu sorunu gidermek için aşağıdaki adımları uygulayan bir kod değişikliği yapmalısın:
+
+1.  `haber/static/js/base.js` veya `haber/static/js/app-init.js` gibi bir başlangıç dosyasında `Utils` nesnesini ve `Utils.storage` metodunu açıkça tanımla. `Utils.storage`'ın `localStorage` API'sini sarmaladığından emin ol.
+2.  `AppConfig` nesnesini (API endpoint'leri, mesajlar, ayarlar vb. içeren) merkezi bir yerde (örn. `haber/static/js/app-config.js` adında yeni bir dosya oluşturarak) tanımla ve bu dosyayı HTML şablonlarında diğer JavaScript dosyalarından önce yükle.
+3.  Tüm JavaScript dosyalarının bu global nesnelere doğru şekilde eriştiğinden emin ol.
+4.  Değişiklikleri test etmek için uygulamanın tüm fonksiyonlarını (haber işleme, ayar kaydetme, geçmiş görüntüleme) çalıştır ve konsolda herhangi bir `undefined` veya `not defined` hatası olup olmadığını kontrol et.
+
+**Mevcut Kod Parçaları:**
+
+`haber/static/js/content.js`
+```javascript
+            // ...
+            Utils.showNotification(validation.message, 'warning');
+            // ...
+            Utils.storage.set('autoSave', formData);
+            // ...
+            const response = await fetch(AppConfig.apiEndpoints.processNews, {
+            // ...
+```
+
+`haber/static/js/main.js`
+```javascript
+        // ...
+        Utils.showNotification(helpContent, 'info', 10000);
+        // ...
+        Utils.storage.remove('autoSave');
+        // ...
+```
+
+**Beklenen Çözüm:**
+
+`Utils.storage` ve `AppConfig` gibi global nesneler, uygulamanın başlangıcında merkezi ve açık bir şekilde tanımlanarak kodun okunabilirliği, bakımı ve güvenilirliği artırılmalıdır.
+```
+

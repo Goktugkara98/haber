@@ -73,7 +73,8 @@ def process_news():
             return jsonify({'success': False, 'error': 'Haber metni gerekli'}), 400
         
         user_id = get_user_id()
-        ai_service = AIService()
+        prompt_service = PromptService()
+        ai_service = AIService(prompt_service=prompt_service)
         
         # AI servisi metni işler (veritabanı kaydı dahil)
         result = ai_service.process_news(news_text, user_settings, user_id)

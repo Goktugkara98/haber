@@ -1,0 +1,56 @@
+## 1. Sorun: `AIService` ve `PromptService` Arasındaki Tutarsız Prompt Oluşturma Mantığı
+
+**Açıklama:**
+`main_routes.py` içindeki `/api/process-news` endpoint'i, haber metnini işlemek için `AIService`'in kendi içindeki basit `_create_prompt` metodunu kullanmaktadır. Ancak, `prompt_routes.py` içindeki `/api/process` (veya `/api/process-news-with-prompt`) endpoint'i, `PromptService`'in daha gelişmiş ve dinamik `build_complete_prompt` metodunu kullanmaktadır. Bu durum, uygulamanın farklı yerlerinde AI'a gönderilen prompt'ların tutarsız olmasına ve kullanıcı ayarlarının her zaman doğru şekilde uygulanmamasına neden olabilir.
+
+**AI Prompt:**
+
+```
+Bir Flask uygulamasında, backend'deki `AIService` sınıfının `process_news` metodunda AI'a gönderilen prompt'un, `PromptService` sınıfının `build_complete_prompt` metodu kullanılarak oluşturulması gerekmektedir. Mevcut durumda `AIService` içinde basit bir `_create_prompt` metodu bulunmaktadır. Bu tutarsızlığı gidermek için aşağıdaki adımları uygulayan bir kod değişikliği yapmalısın:
+
+1.  `AIService` sınıfının `__init__` metoduna `PromptService`'i bağımlılık olarak ekle.
+2.  `AIService` içindeki `_create_prompt` metodunu kaldır.
+3.  `AIService.process_news` metodu içinde, `PromptService` örneğini kullanarak `build_complete_prompt` metodunu çağır. Bu çağrıya `news_text`, `user_settings`, ve `user_id` parametrelerini doğru şekilde ilet.
+4.  Değişiklikleri test etmek için örnek bir senaryo ve beklenen çıktıları belirt.
+
+**Mevcut Kod Parçaları:**
+
+`haber/routes/main_routes.py`
+```python
+@bp.route('/api/process-news', methods=['POST'])
+def process_news():
+    # ...
+    user_id = get_user_id()
+    ai_service = AIService()
+    result = ai_service.process_news(news_text, user_settings, user_id)
+    # ...
+```
+
+`haber/services/ai_service.py`
+```python
+class AIService:
+    def __init__(self):
+        # ...
+
+    def process_news(self, news_text, rules=None, user_id=None):
+        # ...
+        prompt = self._create_prompt(news_text, rules)
+        # ...
+
+    def _create_prompt(self, news_text, rules=None):
+        # ... (basit prompt oluşturma mantığı)
+```
+
+`haber/services/prompt_service.py`
+```python
+class PromptService:
+    # ...
+    def build_complete_prompt(self, config_id, user_settings, news_text):
+        # ... (dinamik prompt oluşturma mantığı)
+```
+
+**Beklenen Çözüm:**
+
+`AIService`'in `process_news` metodu, `PromptService.build_complete_prompt`'i çağırarak tüm dinamik ayarların ve kuralların AI prompt'una dahil edilmesini sağlamalıdır. Bu, uygulamanın prompt oluşturma mantığını merkezileştirecek ve tutarlılık sağlayacaktır.
+```
+

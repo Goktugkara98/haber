@@ -1,0 +1,57 @@
+## 5. Sorun: Frontend'de LocalStorage Kullanımı ve Backend Veritabanı Senkronizasyonu
+
+**Açıklama:**
+Frontend, işlem geçmişi (`processingHistory`) ve otomatik kaydedilen form verileri (`autoSave`) gibi bazı verileri LocalStorage'da saklamaktadır (`content.js`). Ancak, bu verilerin backend veritabanındaki `processing_history` tablosuyla tam olarak nasıl senkronize edildiği veya senkronize edilip edilmediği belirsizdir. Özellikle `saveToHistory` fonksiyonu sadece LocalStorage'a yazarken, `getHistory` fonksiyonu da sadece LocalStorage'dan okumaktadır. Bu durum, farklı cihazlardan erişimde veya tarayıcı verileri temizlendiğinde veri kaybına yol açabilir.
+
+**AI Prompt:**
+
+```
+Bir web uygulamasının frontend'inde LocalStorage'da saklanan işlem geçmişi ve otomatik kaydedilen verilerin, backend veritabanı ile senkronizasyonunun sağlanması gerekmektedir. Mevcut durumda, `content.js` dosyasındaki `saveToHistory` ve `getHistory` fonksiyonları sadece LocalStorage ile etkileşim kurmaktadır. Bu durum, veri tutarsızlıklarına ve veri kaybına yol açabilir.
+
+Bu sorunu gidermek için aşağıdaki adımları uygulayan bir kod değişikliği yapmalısın:
+
+1.  `haber/static/js/content.js` dosyasındaki `saveToHistory` fonksiyonunu, bir işlemi LocalStorage'a kaydettikten sonra bu işlemi backend'deki `/api/history` veya benzeri bir endpoint'e POST isteği ile gönderecek şekilde güncelle. Backend'de bu veriyi `processing_history` tablosuna kaydeden bir mekanizma olmalıdır (eğer yoksa oluşturulmalıdır).
+2.  `getHistory` fonksiyonunu, öncelikle backend'deki `/api/history` endpoint'inden verileri çekecek şekilde değiştir. Eğer backend'den veri gelmezse veya bir hata oluşursa, fallback olarak LocalStorage'daki verileri kullanabilir.
+3.  Backend'de, frontend'den gelen geçmiş verilerini işleyecek ve veritabanına kaydedecek bir API endpoint'i (`/api/history` POST) oluştur veya mevcut olanı güncelle.
+4.  Frontend'deki `history.js` dosyasının da bu yeni senkronizasyon mantığına uygun olarak güncellendiğinden emin ol.
+5.  Değişiklikleri test etmek için farklı cihazlardan veya tarayıcı verilerini temizleyerek işlem geçmişinin tutarlı bir şekilde görüntülendiğini doğrula.
+
+**Mevcut Kod Parçaları:**
+
+`haber/static/js/content.js`
+```javascript
+        saveToHistory: function(input, output) {
+            const historyItem = {
+                id: Date.now(),
+                input: input,
+                output: output,
+                timestamp: new Date().toISOString()
+            };
+
+            let history = Utils.storage.get('processingHistory', []);
+            history.unshift(historyItem);
+            
+            if (history.length > 10) { // Sadece son 10 işlemi tut
+                history = history.slice(0, 10);
+            }
+
+            Utils.storage.set('processingHistory', history);
+        },
+
+        getHistory: function() {
+            return Utils.storage.get('processingHistory', []);
+        }
+```
+
+`haber/routes/main_routes.py`
+```python
+@bp.route('/api/history', methods=['GET'])
+def get_history():
+    # ... (sadece GET metodu var)
+```
+
+**Beklenen Çözüm:**
+
+Frontend'deki LocalStorage kullanımı, backend veritabanı ile senkronize edilerek veri tutarlılığı sağlanmalı ve kullanıcı deneyimi iyileştirilmelidir. Bu, kullanıcıların işlem geçmişlerine her yerden erişebilmesini ve veri kaybı riskini azaltacaktır.
+```
+

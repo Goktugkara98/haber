@@ -1,0 +1,37 @@
+## 2. Sorun: Veritabanı Bağlantı Bilgilerinin Kod İçinde Olması
+
+**Açıklama:**
+`haber/database/connection.py` dosyasında MySQL veritabanı bağlantı bilgileri (`host`, `database`, `user`, `password`) doğrudan kod içine yazılmıştır. Bu, güvenlik açısından riskli bir durumdur ve farklı ortamlarda (geliştirme, test, üretim) yapılandırma yönetimini zorlaştırmaktadır. `main.py` dosyasında `.env` kullanımı ve `os.getenv()` ile ortam değişkenlerinin okunması örneği olmasına rağmen, `connection.py` bu yaklaşıma uymamaktadır.
+
+**AI Prompt:**
+
+```
+Bir Python Flask uygulamasında, veritabanı bağlantı bilgilerinin (`host`, `database`, `user`, `password`) kod içine gömülü olması güvenlik açığı oluşturmaktadır. Bu bilgilerin `.env` dosyasından okunması ve `os.getenv()` kullanılarak erişilmesi gerekmektedir. Aşağıdaki adımları uygulayan bir kod değişikliği yapmalısın:
+
+1.  `haber/database/connection.py` dosyasını düzenle.
+2.  `mysql.connector.connect` fonksiyonundaki `host`, `database`, `user` ve `password` parametrelerini `os.getenv()` kullanarak ortam değişkenlerinden alacak şekilde değiştir.
+3.  Gerekirse, `.env` dosyasında bu değişkenler için örnek değerler tanımla.
+4.  Değişiklikleri test etmek için veritabanı bağlantısını kontrol eden bir senaryo belirt.
+
+**Mevcut Kod Parçası:**
+
+`haber/database/connection.py`
+```python
+class DatabaseConnection:
+    def connect(self):
+        try:
+            self.connection = mysql.connector.connect(
+                host='localhost',
+                database='haber_editor',
+                user='root',
+                password='',
+                # ... diğer parametreler
+            )
+            # ...
+```
+
+**Beklenen Çözüm:**
+
+Veritabanı bağlantı bilgileri, ortam değişkenlerinden güvenli bir şekilde okunarak uygulamanın farklı ortamlarda kolayca yapılandırılabilmesi sağlanmalıdır.
+```
+

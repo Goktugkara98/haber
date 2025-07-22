@@ -14,8 +14,13 @@
 #     1.4 execute_query(): SQL sorgularını çalıştırır ve sonuçları döndürür.
 
 # --- Gerekli Kütüphaneler ---
+import os
 import mysql.connector
 from mysql.connector import Error
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # ==============================================================================
 # 1.0 DATABASECONNECTION SINIFI
@@ -47,10 +52,10 @@ class DatabaseConnection:
         """
         try:
             self.connection = mysql.connector.connect(
-                host='localhost',
-                database='haber_editor',
-                user='root',
-                password='',
+                host=os.getenv('DB_HOST', 'localhost'),
+                database=os.getenv('DB_NAME', 'haber_editor'),
+                user=os.getenv('DB_USER', 'root'),
+                password=os.getenv('DB_PASSWORD', ''),
                 charset='utf8mb4',
                 collation='utf8mb4_unicode_ci',
                 use_unicode=True,

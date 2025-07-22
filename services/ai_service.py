@@ -27,10 +27,14 @@ class AIService:
     """
     Yapay zeka işlemlerini yöneten servis sınıfı.
     """
-    def __init__(self):
+    def __init__(self, prompt_service=None):
         """
         AI servisini başlatır. Ortam değişkenlerinden (environment variables)
         GEMINI_API_KEY'i okuyarak Gemini modelini yapılandırır.
+        
+        Args:
+            prompt_service (PromptService, optional): Prompt oluşturma işlemleri için kullanılacak servis.
+                                                    Eğer sağlanmazsa yeni bir örnek oluşturulur.
         """
         self.api_key = os.getenv('GEMINI_API_KEY')
         if self.api_key:
@@ -39,6 +43,9 @@ class AIService:
         else:
             self.model = None
             print("UYARI: GEMINI_API_KEY ortam değişkeni bulunamadı.")
+            
+        # PromptService'i başlat
+        self.prompt_service = prompt_service if prompt_service is not None else PromptService()
 
     # --- 1.0 Ana Servis Metotları ---
 
@@ -63,7 +70,22 @@ class AIService:
                 return {'success': False, 'error': validation_message, 'status': 'error'}
 
             # AI için prompt oluştur
-            prompt = self._create_prompt(news_text, rules)
+            active_config = self.prompt_service.get_active_config()
+            if not active_config:
+                error_msg = 'Aktif bir prompt konfigürasyonu bulunamadı.'
+                self._update_processing_status(processing_id, 'error', error_msg)
+                return {'success': False, 'error': error_msg, 'status': 'error', 'processing_id': processing_id}
+                
+            prompt = self.prompt_service.build_complete_prompt(
+                config_id=active_config['id'],
+                user_settings=rules or {},
+                news_text=news_text
+            )
+            
+            if not prompt:
+                error_msg = 'Prompt oluşturulurken bir hata oluştu.'
+                self._update_processing_status(processing_id, 'error', error_msg)
+                return {'success': False, 'error': error_msg, 'status': 'error', 'processing_id': processing_id}
 
             # Veritabanına başlangıç kaydını at
             processing_id = self._save_processing_record(user_id, news_text, prompt, 'processing', settings_used=rules)
@@ -175,24 +197,7 @@ class AIService:
 
     # --- 2.0 Özel Yardımcı Metotlar ---
 
-    def _create_prompt(self, news_text, rules=None):
-        """AI modeli için temel bir komut metni (prompt) oluşturur."""
-        # Not: Bu fonksiyon, prompt_service'teki daha gelişmiş yapı yerine
-        # temel bir şablon kullanır. Gerekirse prompt_service'ten çağrı yapılabilir.
-        base_prompt = """
-Sen profesyonel bir haber editörüsün. Verilen haber metnini özgün, kaliteli ve etik kurallara uygun şekilde yeniden yazman gerekiyor.
 
-Kurallar:
-- Orijinal haberin ana mesajını koruyarak tamamen yeni bir metin oluştur.
-- Türkçe dil kurallarına uygun, akıcı bir metin yaz.
-- Objektif ve tarafsız bir dil kullan.
-- Başlık ve içerik tutarlı olsun.
-
-Orijinal Haber Metni:
-{}
-
-Lütfen bu haberi özgün şekilde yeniden yaz:"""
-        return base_prompt.format(news_text)
         
     def validate_news(self, news_text):
         """Haber metninin uzunluk gibi temel kurallara uygunluğunu doğrular."""

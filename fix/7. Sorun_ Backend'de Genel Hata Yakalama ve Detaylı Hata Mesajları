@@ -1,0 +1,45 @@
+## 7. Sorun: Backend'de Genel Hata Yakalama ve Detaylı Hata Mesajları
+
+**Açıklama:**
+Backend Flask rotalarında (`main_routes.py`, `prompt_routes.py`) ve servis sınıflarında (`ai_service.py`, `prompt_service.py`) genel `Exception` yakalama blokları (`except Exception as e:`) kullanılmaktadır. Bu, beklenmedik hataları yakalamak için iyi olsa da, hatanın türünü ve kaynağını ayırt etmeyi zorlaştırmaktadır. Ayrıca, kullanıcıya dönülen hata mesajları genellikle `str(e)` şeklinde olup, hassas bilgileri ifşa edebilir veya yeterince açıklayıcı olmayabilir.
+
+**AI Prompt:**
+
+```
+Bir Python Flask backend uygulamasında, genel `Exception` yakalama bloklarının daha spesifik hale getirilmesi ve kullanıcıya dönülen hata mesajlarının iyileştirilmesi gerekmektedir. Mevcut durumda, hassas bilgiler ifşa edilebilir veya hata mesajları yeterince açıklayıcı olmayabilir. Bu durumu iyileştirmek için aşağıdaki adımları uygulayan bir kod değişikliği yapmalısın:
+
+1.  `haber/routes/main_routes.py` ve `haber/routes/prompt_routes.py` dosyalarındaki `try...except Exception as e:` bloklarını incele.
+2.  Mümkün olduğunca, daha spesifik hata türlerini (örn. `ValueError`, `TypeError`, `mysql.connector.Error`, `requests.exceptions.RequestException`) yakala.
+3.  Hata mesajlarını kullanıcıya dönerken, `str(e)` yerine daha genel ve güvenli bir mesaj kullan. Geliştirme ortamında detaylı hata mesajlarını logla, ancak üretim ortamında bu detayları kullanıcıya gösterme.
+4.  Özellikle veritabanı hataları için (`mysql.connector.Error`), kullanıcıya genel bir hata mesajı dönmeli ve loglarda detaylı hata bilgisini tutmalısın.
+5.  AI servisinden gelen yanıtın geçerli JSON olup olmadığını kontrol eden bir mekanizma ekle. Eğer yanıt geçerli JSON değilse, bu durumu `processing_history` tablosuna `failed` olarak kaydet ve uygun bir hata mesajı döndür.
+
+**Mevcut Kod Parçaları:**
+
+`haber/routes/main_routes.py`
+```python
+    except Exception as e:
+        print(f"Hata (process_news): {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+```
+
+`haber/services/ai_service.py`
+```python
+        except Exception as e:
+            error_msg = f"AI işleme hatası: {str(e)}"
+            if processing_id:
+                self._update_processing_status(processing_id, 'error', error_msg)
+            
+            return {
+                'success': False,
+                'error': error_msg,
+                'status': 'error',
+                'processing_id': processing_id
+            }
+```
+
+**Beklenen Çözüm:**
+
+Backend hata yönetimi, daha spesifik hata yakalama ve kullanıcıya dönülen hata mesajlarının iyileştirilmesiyle daha sağlam hale getirilmelidir. Bu, uygulamanın güvenilirliğini artıracak ve hata ayıklama sürecini kolaylaştıracaktır.
+```
+

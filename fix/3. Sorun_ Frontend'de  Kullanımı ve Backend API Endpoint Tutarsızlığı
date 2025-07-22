@@ -1,0 +1,101 @@
+## 3. Sorun: Frontend'de `AppConfig` Kullanımı ve Backend API Endpoint Tutarsızlığı
+
+**Açıklama:**
+Frontend JavaScript dosyalarında (örn. `content.js`, `settings-manager.js`, `app-init.js`) API endpoint'leri `AppConfig.apiEndpoints` üzerinden çağrılmaktadır. Ancak, bu `AppConfig` nesnesinin nasıl tanımlandığı ve backend'deki Flask rotalarıyla nasıl eşleştiği tam olarak açık değildir. Özellikle `main_routes.py`'deki `/api/process-news` ve `prompt_routes.py`'deki `/api/prompt/build-complete-prompt` gibi endpoint'lerin frontend'de doğru şekilde yapılandırıldığından emin olunmalıdır. Ayrıca, `prompt_routes.py`'deki `/api/process` endpoint'i bir placeholder olarak durmaktadır ve `AIService` ile entegre değildir.
+
+**AI Prompt:**
+
+```
+Bir Flask uygulamasının frontend'inde kullanılan `AppConfig.apiEndpoints` nesnesinin, backend'deki Flask rotalarıyla tutarlı olduğundan emin olunmalıdır. Özellikle `main_routes.py` ve `prompt_routes.py`'deki API endpoint'leri ile frontend'deki JavaScript dosyalarındaki (`content.js`, `settings-manager.js`, `app-init.js`) çağrılar arasında tam bir eşleşme sağlanmalıdır. Ayrıca, `prompt_routes.py`'deki `/api/process` endpoint'i şu anda bir placeholder durumundadır ve AI servisi ile entegre değildir.
+
+Bu sorunları gidermek için aşağıdaki adımları uygulayan bir kod değişikliği yapmalısın:
+
+1.  `haber/static/js/app-init.js` veya benzeri bir frontend başlangıç dosyasında `AppConfig` nesnesinin tanımlandığı yeri bul.
+2.  `AppConfig.apiEndpoints` içindeki URL'lerin, backend'deki Flask rotalarıyla (örn. `/api/process-news`, `/api/prompt/user-settings`, `/api/prompt/build-complete-prompt`) tam olarak eşleştiğinden emin ol.
+3.  `prompt_routes.py`'deki `/api/process` endpoint'ini, `AIService.process_news` metodunu çağıracak şekilde entegre et. Bu, `main_routes.py`'deki `/api/process-news` ile aynı işlevi görmesini sağlayacaktır, ancak `PromptService`'in `build_complete_prompt` metodunu kullanarak daha gelişmiş prompt oluşturma mantığını kullanmalıdır.
+4.  Frontend'deki `processNews` fonksiyonunun (örn. `content.js` içinde) doğru endpoint'i çağırdığından ve beklenen JSON formatında veri gönderip aldığından emin ol.
+5.  Değişiklikleri test etmek için hem haber işleme hem de ayar kaydetme/yükleme senaryolarını çalıştır.
+
+**Mevcut Kod Parçaları:**
+
+`haber/static/js/content.js`
+```javascript
+        processNews: async function(data) {
+            try {
+                // ...
+                const response = await fetch(AppConfig.apiEndpoints.processNews, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        news_text: data.newsText,
+                        settings: data.settings || {}
+                    })
+                });
+                // ...
+            }
+        },
+```
+
+`haber/static/js/settings-manager.js`
+```javascript
+    async loadFromDatabase() {
+        const response = await fetch(AppConfig.apiEndpoints.getUserSettings);
+        // ...
+    }
+
+    async saveToDatabase(newSettings) {
+        const response = await fetch(AppConfig.apiEndpoints.saveUserSettings, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ settings: newSettings })
+        });
+        // ...
+    }
+```
+
+`haber/static/js/app-init.js`
+```javascript
+            window.PreviewModal.buildPrompt = async function(newsText, settings) {
+                try {
+                    // ...
+                    const response = await fetch('/api/prompt/build-complete-prompt', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ settings: settings, news_text: newsText })
+                    });
+                    // ...
+                }
+            };
+```
+
+`haber/routes/main_routes.py`
+```python
+@bp.route('/api/process-news', methods=['POST'])
+def process_news():
+    # ...
+```
+
+`haber/routes/prompt_routes.py`
+```python
+@bp.route('/api/prompt/user-settings', methods=['GET'])
+def get_user_settings():
+    # ...
+
+@bp.route('/api/prompt/user-settings', methods=['POST'])
+def save_user_settings():
+    # ...
+
+@bp.route('/api/prompt/build-complete-prompt', methods=['POST'])
+def build_complete_prompt():
+    # ...
+
+@bp.route('/api/process', methods=['POST'])
+def process_news_with_prompt():
+    # ... (placeholder AI entegrasyonu)
+```
+
+**Beklenen Çözüm:**
+
+Frontend'deki API endpoint tanımlamaları ile backend'deki Flask rotaları arasında tam bir tutarlılık sağlanmalı ve `prompt_routes.py`'deki `/api/process` endpoint'i gerçek AI işleme mantığıyla entegre edilmelidir. Bu, uygulamanın hem haber işleme hem de ayar yönetimi akışlarının sorunsuz çalışmasını sağlayacaktır.
+```
+

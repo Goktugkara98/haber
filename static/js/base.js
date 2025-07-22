@@ -48,9 +48,8 @@ const AppConfig = {
         updatePromptSection: '/api/v1/prompts/sections',
         getUserSettings: '/api/v1/prompts/settings',
         saveUserSettings: '/api/v1/prompts/settings',
-        buildCompletePrompt: '/api/v1/prompts/build-complete-prompt',
-        buildCompletePrompt: '/api/v1/prompts/build-complete-prompt',
-        processWithPrompt: '/api/v1/prompts/process-news'
+        buildCompletePrompt: '/api/v1/prompts/processing/build-complete-prompt',
+        processWithPrompt: '/api/v1/prompts/processing/process-news'
     },
     
     /**
